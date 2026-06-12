@@ -3,8 +3,8 @@ function Hero() {
     <section className="hero">
 
       <h1>
-        Delivery y Mandados
-        en Carazo y Nicaragua
+        Delivery, Mandados y Envíos
+        en Carazo y toda Nicaragua
       </h1>
 
       <p>
@@ -12,11 +12,12 @@ function Hero() {
       </p>
 
       <p>
-        Tú lo pides, yo voy por ti.
+        Compras, paquetes, trámites y más.
       </p>
 
       <a
         href="https://wa.me/50586109523"
+        target="_blank"
         className="hero-btn"
       >
         Solicitar Servicio
