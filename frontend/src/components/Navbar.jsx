@@ -2,8 +2,8 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="logo">
-         Ruta Express
-      </div>
+   RUTA EXPRESS
+</div>
 
       <ul className="nav-links">
         <li><a href="#servicios">Servicios</a></li>
