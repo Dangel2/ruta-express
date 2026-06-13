@@ -1,26 +1,37 @@
-function Navbar() {
+import { Link } from "react-router-dom";
+
+export default function Navbar() {
   return (
-    <nav className="navbar">
-      <div className="logo">
-   RUTA EXPRESS
-</div>
+    <nav className="bg-red-600 text-white p-4 shadow">
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <h1 className="font-bold text-2xl">
+          Ruta Express
+        </h1>
 
-      <ul className="nav-links">
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#tarifas">Tarifas</a></li>
-        <li><a href="#promociones">Promociones</a></li>
-        <li><a href="#cobertura">Cobertura</a></li>
-      </ul>
+        <div className="flex gap-4">
+          <Link to="/">Inicio</Link>
 
-      <a
-        href="https://wa.me/50586109523"
-        className="whatsapp-btn"
-        target="_blank"
-      >
-        WhatsApp
-      </a>
+          <Link to="/register">
+            Registro
+          </Link>
+
+          <Link to="/login">
+            Login
+          </Link>
+
+          <Link to="/create-order">
+            Crear Pedido
+          </Link>
+
+          <Link to="/my-orders">
+            Mis Pedidos
+          </Link>
+
+          <Link to="/admin">
+            Admin
+          </Link>
+        </div>
+      </div>
     </nav>
   );
 }
-
-export default Navbar;
