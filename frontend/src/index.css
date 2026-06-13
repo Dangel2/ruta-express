@@ -246,4 +246,55 @@ footer p{
     font-size:2.2rem;
   }
 
+  .stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+}
+
+.stat-card{
+  background:#151515;
+  border:1px solid #222;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.stat-card h3{
+  color:#ff0000;
+  font-size:2rem;
+}
+
+.steps-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;
+}
+
+.step-card{
+  background:#151515;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.promo-banner{
+  text-align:center;
+  background:linear-gradient(
+    90deg,
+    #ff0000,
+    #cc0000
+  );
+  border-radius:15px;
+  margin:20px;
+}
+
+.promo-banner h2{
+  color:white;
+}
+
+.card p{
+  margin-top:10px;
+}
+
 }
