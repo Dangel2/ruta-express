@@ -6,19 +6,37 @@ import Promotions from "../components/Promotions";
 import Coverage from "../components/Coverage";
 import Footer from "../components/Footer";
 import WhatsAppButton from "../components/WhatsAppButton";
+import Stats from "../components/Stats";
+import HowItWorks from "../components/HowItWorks";
+import Testimonials from "../components/Testimonials";
+import PromoBanner from "../components/PromoBanner";
 
 function Home() {
   return (
     <>
-      <Navbar />
-      <Hero />
-      <Services />
-      <Pricing />
-      <Promotions />
-      <Coverage />
-      <Footer />
-      <WhatsAppButton />
-    </>
+  <Navbar />
+  <Hero />
+
+  <Stats />
+
+  <Services />
+
+  <HowItWorks />
+
+  <Pricing />
+
+  <PromoBanner />
+
+  <Promotions />
+
+  <Testimonials />
+
+  <Coverage />
+
+  <Footer />
+
+  <WhatsAppButton />
+</>
   );
 }
 
