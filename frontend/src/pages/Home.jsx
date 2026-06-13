@@ -1,27 +1,29 @@
+import Hero from "../components/Hero";
+import Stats from "../components/Stats";
+import Services from "../components/Services";
+import HowItWorks from "../components/HowItWorks";
+import Pricing from "../components/Pricing";
+import PromoBanner from "../components/PromoBanner";
+import Promotions from "../components/Promotions";
+import Testimonials from "../components/Testimonials";
+import Coverage from "../components/Coverage";
+import Footer from "../components/Footer";
+import WhatsAppButton from "../components/WhatsAppButton";
+
 export default function Home() {
   return (
-    <div className="max-w-5xl mx-auto mt-10 text-center">
-      <h1 className="text-5xl font-bold text-red-600">
-        Ruta Express
-      </h1>
-
-      <p className="mt-4 text-xl">
-        Si no tienes tiempo,
-        nosotros hacemos el viaje por ti.
-      </p>
-
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold">
-          Servicios
-        </h2>
-
-        <ul className="mt-4">
-          <li>Mandados</li>
-          <li>Compras</li>
-          <li>Envíos</li>
-          <li>Trámites</li>
-        </ul>
-      </div>
-    </div>
+    <>
+      <Hero />
+      <Stats />
+      <Services />
+      <HowItWorks />
+      <Pricing />
+      <PromoBanner />
+      <Promotions />
+      <Testimonials />
+      <Coverage />
+      <Footer />
+      <WhatsAppButton />
+    </>
   );
 }
