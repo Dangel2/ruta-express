@@ -25,18 +25,11 @@ CREATE TABLE IF NOT EXISTS promotions (
 
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
-
     customer_id INTEGER REFERENCES customers(id),
-
     origin TEXT NOT NULL,
-
     destination TEXT NOT NULL,
-
     description TEXT,
-
     price DECIMAL(10,2) DEFAULT 0,
-
     status VARCHAR(50) DEFAULT 'Pendiente',
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

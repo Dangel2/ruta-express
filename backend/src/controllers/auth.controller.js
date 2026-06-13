@@ -32,12 +32,12 @@ export async function registerCustomer(req, res) {
       [name, phone || null, email, hashedPassword]
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Cliente registrado correctamente",
       customer: result.rows[0]
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error registrando cliente",
       error: error.message
     });
@@ -47,6 +47,12 @@ export async function registerCustomer(req, res) {
 export async function loginCustomer(req, res) {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Correo y contraseña son obligatorios"
+      });
+    }
 
     const result = await pool.query(
       "SELECT * FROM customers WHERE email = $1",
@@ -60,6 +66,7 @@ export async function loginCustomer(req, res) {
     }
 
     const customer = result.rows[0];
+
     const validPassword = await bcrypt.compare(password, customer.password);
 
     if (!validPassword) {
@@ -69,12 +76,15 @@ export async function loginCustomer(req, res) {
     }
 
     const token = jwt.sign(
-      { id: customer.id, role: "customer" },
+      {
+        id: customer.id,
+        role: "customer"
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.json({
+    return res.json({
       message: "Inicio de sesión correcto",
       token,
       customer: {
@@ -85,7 +95,7 @@ export async function loginCustomer(req, res) {
       }
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error iniciando sesión",
       error: error.message
     });
