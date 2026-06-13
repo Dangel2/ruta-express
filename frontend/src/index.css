@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  scroll-behavior:smooth;
+}
+
+body{
+  background:#0A0A0A;
+  color:white;
+  font-family:'Segoe UI',sans-serif;
+}
+
+/* NAVBAR */
+
+.navbar{
+  position:sticky;
+  top:0;
+  z-index:1000;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  padding:18px 40px;
+
+  background:#111;
+  border-bottom:1px solid #222;
+}
+
+.logo{
+  color:#ff0000;
+  font-size:1.5rem;
+  font-weight:bold;
+}
+
+.nav-links{
+  display:flex;
+  gap:25px;
+  list-style:none;
+}
+
+.nav-links a{
+  color:white;
+  text-decoration:none;
+}
+
+.nav-links a:hover{
+  color:#ff0000;
+}
+
+.whatsapp-btn{
+  background:#ff0000;
+  color:white;
+  text-decoration:none;
+
+  padding:10px 18px;
+  border-radius:10px;
+}
+
+/* HERO */
+
+.hero{
+  min-height:80vh;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+
+  text-align:center;
+  padding:40px;
+}
+
+.hero h1{
+  font-size:3.5rem;
+  max-width:900px;
+  margin-bottom:20px;
+}
+
+.hero p{
+  margin:10px 0;
+  color:#ccc;
+}
+
+.hero-btn{
+  margin-top:25px;
+
+  background:#ff0000;
+  color:white;
+
+  text-decoration:none;
+
+  padding:15px 30px;
+  border-radius:12px;
+  font-size:1.1rem;
+}
+
+/* SECTIONS */
+
+section{
+  padding:80px 30px;
+}
+
+section h2{
+  text-align:center;
+  margin-bottom:40px;
+  font-size:2rem;
+  color:#ff0000;
+}
+
+/* CARDS */
+
+.grid{
+  display:grid;
+
+  grid-template-columns:
+  repeat(auto-fit,minmax(250px,1fr));
+
+  gap:20px;
+}
+
+.card{
+  background:#151515;
+  border:1px solid #222;
+
+  padding:30px;
+  border-radius:15px;
+
+  text-align:center;
+
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:translateY(-5px);
+}
+
+/* TABLE */
+
+table{
+  width:100%;
+  max-width:700px;
+  margin:auto;
+
+  border-collapse:collapse;
+}
+
+th{
+  background:#ff0000;
+}
+
+th,td{
+  padding:15px;
+  border:1px solid #333;
+  text-align:center;
+}
+
+/* PROMOS */
+
+.promo-card{
+  background:#151515;
+  border-left:4px solid #ff0000;
+
+  padding:20px;
+  margin:15px auto;
+
+  max-width:800px;
+  border-radius:10px;
+}
+
+/* COVERAGE */
+
+#cobertura ul{
+  max-width:500px;
+  margin:auto;
+}
+
+#cobertura li{
+  background:#151515;
+
+  margin:10px 0;
+  padding:15px;
+
+  border-radius:10px;
+}
+
+/* FOOTER */
+
+footer{
+  background:#111;
+
+  padding:40px;
+  text-align:center;
+}
+
+footer p{
+  margin-top:10px;
+}
+
+/* WHATSAPP FLOAT */
+
+.floating-whatsapp{
+  position:fixed;
+
+  bottom:25px;
+  right:25px;
+
+  width:65px;
+  height:65px;
+
+  border-radius:50%;
+
+  background:#25D366;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  text-decoration:none;
+
+  font-size:2rem;
+
+  box-shadow:0 0 15px rgba(0,0,0,.4);
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+  .navbar{
+    flex-direction:column;
+    gap:15px;
+  }
+
+  .nav-links{
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  .hero h1{
+    font-size:2.2rem;
+  }
+
+  .stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+}
+
+.stat-card{
+  background:#151515;
+  border:1px solid #222;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.stat-card h3{
+  color:#ff0000;
+  font-size:2rem;
+}
+
+.steps-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;
+}
+
+.step-card{
+  background:#151515;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.promo-banner{
+  text-align:center;
+  background:linear-gradient(
+    90deg,
+    #ff0000,
+    #cc0000
+  );
+  border-radius:15px;
+  margin:20px;
+}
+
+.promo-banner h2{
+  color:white;
+}
+
+.card p{
+  margin-top:10px;
+}
+
+}
