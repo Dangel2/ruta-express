@@ -59,3 +59,61 @@ export async function getMyOrders() {
 
   return response.json();
 }
+
+/* ===========================
+   ADMIN
+=========================== */
+
+export async function adminLogin(credentials) {
+  const response = await fetch(`${API_URL}/admin/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(credentials)
+  });
+
+  return response.json();
+}
+
+export async function getDashboardStats() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/admin/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
+
+export async function getAllOrders() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/admin/orders`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
+
+export async function updateOrderStatus(id, status) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/admin/orders/${id}/status`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    }
+  );
+
+  return response.json();
+}
