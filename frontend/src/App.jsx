@@ -1,7 +1,13 @@
-import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
 
 function App() {
-  return <Home />;
+  return (
+    <div>
+      <Register />
+      <Login />
+    </div>
+  );
 }
 
 export default App;
