@@ -25,6 +25,7 @@ export default function AdminDashboard() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
+  const [dateFilter, setDateFilter] = useState("Hoy");
 
   const [promoForm, setPromoForm] = useState({
     title: "",
@@ -48,6 +49,18 @@ export default function AdminDashboard() {
       hour: "numeric",
       minute: "2-digit",
       hour12: true
+    });
+  }
+
+  function getDateKey(date) {
+    return new Date(date).toLocaleDateString("en-CA", {
+      timeZone: "America/Managua"
+    });
+  }
+
+  function getTodayKey() {
+    return new Date().toLocaleDateString("en-CA", {
+      timeZone: "America/Managua"
     });
   }
 
@@ -156,6 +169,11 @@ export default function AdminDashboard() {
 
   const filteredOrders = orders.filter((order) => {
     const text = search.toLowerCase();
+    const todayKey = getTodayKey();
+    const orderDateKey = getDateKey(order.created_at);
+
+    const matchesDate =
+      dateFilter === "Todos" || orderDateKey === todayKey;
 
     const matchesSearch =
       order.customer_name?.toLowerCase().includes(text) ||
@@ -169,12 +187,13 @@ export default function AdminDashboard() {
     const matchesStatus =
       statusFilter === "Todos" || order.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesDate && matchesSearch && matchesStatus;
   });
 
   function clearFilters() {
     setSearch("");
     setStatusFilter("Todos");
+    setDateFilter("Hoy");
   }
 
   function exportCustomersExcel() {
@@ -208,8 +227,8 @@ export default function AdminDashboard() {
       Pedido: order.id,
       Cliente: order.customer_name,
       Telefono: order.customer_phone,
-      Origen: order.origin_address || order.origin,
-      Destino: order.destination_address || order.destination,
+      "Punto A": order.origin_address || order.origin,
+      "Punto B": order.destination_address || order.destination,
       Precio: order.price,
       Estado: order.status,
       Fecha: formatDate(order.created_at),
@@ -264,74 +283,70 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
-            <p className="text-gray-400">Pedidos</p>
-            <h2 className="text-3xl font-bold">{stats.totalOrders}</h2>
-          </div>
+        <h2 className="text-2xl font-bold mb-4">Dashboard Diario</h2>
 
-          <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
-            <p className="text-gray-400">Pendientes</p>
-            <h2 className="text-3xl font-bold text-yellow-400">
-              {stats.pendingOrders}
-            </h2>
-          </div>
-
-          <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
-            <p className="text-gray-400">En camino</p>
-            <h2 className="text-3xl font-bold text-blue-400">
-              {stats.onWayOrders}
-            </h2>
-          </div>
-
-          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
-            <p className="text-gray-400">Entregados</p>
-            <h2 className="text-3xl font-bold text-green-400">
-              {stats.deliveredOrders}
-            </h2>
-          </div>
-
+        <div className="grid md:grid-cols-4 gap-4 mb-10">
           <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
-            <p className="text-gray-400">Clientes</p>
+            <p className="text-gray-400">Pedidos de Hoy</p>
             <h2 className="text-3xl font-bold text-red-500">
-              {stats.totalCustomers}
-            </h2>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-5 gap-4 mb-10">
-          <div className="bg-[#151515] border border-green-600 rounded-xl p-4">
-            <p className="text-gray-400">Ingresos Totales</p>
-            <h2 className="text-2xl font-bold text-green-400">
-              C$ {stats.totalIncome}
-            </h2>
-          </div>
-
-          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
-            <p className="text-gray-400">Ingresos Hoy</p>
-            <h2 className="text-2xl font-bold text-green-400">
-              C$ {stats.todayIncome}
-            </h2>
-          </div>
-
-          <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
-            <p className="text-gray-400">Ingresos Mes</p>
-            <h2 className="text-2xl font-bold text-emerald-400">
-              C$ {stats.monthIncome}
-            </h2>
-          </div>
-
-          <div className="bg-[#151515] border border-cyan-500 rounded-xl p-4">
-            <p className="text-gray-400">Pedidos Hoy</p>
-            <h2 className="text-2xl font-bold text-cyan-400">
               {stats.todayOrders}
             </h2>
           </div>
 
+          <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
+            <p className="text-gray-400">Pendientes de Hoy</p>
+            <h2 className="text-3xl font-bold text-yellow-400">
+              {stats.todayPendingOrders}
+            </h2>
+          </div>
+
+          <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
+            <p className="text-gray-400">En Camino Hoy</p>
+            <h2 className="text-3xl font-bold text-blue-400">
+              {stats.todayOnWayOrders}
+            </h2>
+          </div>
+
+          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
+            <p className="text-gray-400">Entregados Hoy</p>
+            <h2 className="text-3xl font-bold text-green-400">
+              {stats.todayDeliveredOrders}
+            </h2>
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-bold mb-4">Dashboard Mensual</h2>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
           <div className="bg-[#151515] border border-purple-500 rounded-xl p-4">
-            <p className="text-gray-400">Pedidos Mes</p>
-            <h2 className="text-2xl font-bold text-purple-400">
+            <p className="text-gray-400">Pedidos del Mes</p>
+            <h2 className="text-3xl font-bold text-purple-400">
               {stats.monthOrders}
+            </h2>
+          </div>
+
+          <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
+            <p className="text-gray-400">Ingresos del Mes</p>
+            <h2 className="text-3xl font-bold text-emerald-400">
+              C$ {stats.monthIncome}
+            </h2>
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-bold mb-4">Dashboard Histórico</h2>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
+          <div className="bg-[#151515] border border-cyan-500 rounded-xl p-4">
+            <p className="text-gray-400">Total Clientes</p>
+            <h2 className="text-3xl font-bold text-cyan-400">
+              {stats.totalCustomers}
+            </h2>
+          </div>
+
+          <div className="bg-[#151515] border border-green-600 rounded-xl p-4">
+            <p className="text-gray-400">Ingresos Totales</p>
+            <h2 className="text-3xl font-bold text-green-400">
+              C$ {stats.totalIncome}
             </h2>
           </div>
         </div>
@@ -513,13 +528,13 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">Pedidos</h2>
+        <h2 className="text-2xl font-bold mb-4">Pedidos de Hoy</h2>
 
         <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 mb-6">
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
             <input
               className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              placeholder="Buscar por cliente, teléfono, origen, destino o #pedido"
+              placeholder="Buscar por cliente, teléfono, punto A, punto B o #pedido"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -534,6 +549,15 @@ export default function AdminDashboard() {
               <option>En camino</option>
               <option>Entregado</option>
               <option>Cancelado</option>
+            </select>
+
+            <select
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <option>Hoy</option>
+              <option>Todos</option>
             </select>
 
             <button
@@ -571,25 +595,12 @@ export default function AdminDashboard() {
                 </p>
 
                 <p className="text-gray-300">
-                  Origen: {order.origin_address || order.origin}
+                  Punto A: {order.origin_address || order.origin}
                 </p>
 
                 <p className="text-gray-300">
-                  Destino: {order.destination_address || order.destination}
+                  Punto B: {order.destination_address || order.destination}
                 </p>
-
-                {order.origin_lat && order.origin_lng && (
-                  <p className="text-gray-400 text-sm">
-                    Coordenadas origen: {order.origin_lat}, {order.origin_lng}
-                  </p>
-                )}
-
-                {order.destination_lat && order.destination_lng && (
-                  <p className="text-gray-400 text-sm">
-                    Coordenadas destino: {order.destination_lat},{" "}
-                    {order.destination_lng}
-                  </p>
-                )}
 
                 <p className="text-gray-300">
                   Fecha: {formatDate(order.created_at)}
@@ -616,7 +627,7 @@ export default function AdminDashboard() {
                     rel="noopener noreferrer"
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
                   >
-                    Ver Ruta
+                    Ver Ruta Punto A → Punto B
                   </a>
 
                   <button

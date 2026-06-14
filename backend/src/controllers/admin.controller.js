@@ -121,72 +121,57 @@ export async function getAllCustomers(req, res) {
 
 export async function getDashboardStats(req, res) {
   try {
-    const totalOrders = await pool.query("SELECT COUNT(*) FROM orders");
+    const stats = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (
+          WHERE DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
+        ) AS today_orders,
 
-    const pendingOrders = await pool.query(
-      "SELECT COUNT(*) FROM orders WHERE status = 'Pendiente'"
-    );
+        COUNT(*) FILTER (
+          WHERE status = 'Pendiente'
+          AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
+        ) AS today_pending_orders,
 
-    const onWayOrders = await pool.query(
-      "SELECT COUNT(*) FROM orders WHERE status = 'En camino'"
-    );
+        COUNT(*) FILTER (
+          WHERE status = 'En camino'
+          AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
+        ) AS today_on_way_orders,
 
-    const deliveredOrders = await pool.query(
-      "SELECT COUNT(*) FROM orders WHERE status = 'Entregado'"
-    );
+        COUNT(*) FILTER (
+          WHERE status = 'Entregado'
+          AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
+        ) AS today_delivered_orders,
 
-    const canceledOrders = await pool.query(
-      "SELECT COUNT(*) FROM orders WHERE status = 'Cancelado'"
-    );
+        COUNT(*) FILTER (
+          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Managua')
+        ) AS month_orders,
 
-    const totalCustomers = await pool.query(
+        COALESCE(SUM(price) FILTER (
+          WHERE status = 'Entregado'
+          AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Managua')
+        ), 0) AS month_income,
+
+        COALESCE(SUM(price) FILTER (
+          WHERE status = 'Entregado'
+        ), 0) AS total_income
+      FROM orders
+    `);
+
+    const customers = await pool.query(
       "SELECT COUNT(*) FROM customers"
     );
 
-    const totalIncome = await pool.query(
-      "SELECT COALESCE(SUM(price),0) AS total FROM orders WHERE status='Entregado'"
-    );
-
-    const todayIncome = await pool.query(`
-      SELECT COALESCE(SUM(price),0) AS total
-      FROM orders
-      WHERE status='Entregado'
-      AND DATE(created_at)=CURRENT_DATE
-    `);
-
-    const monthIncome = await pool.query(`
-      SELECT COALESCE(SUM(price),0) AS total
-      FROM orders
-      WHERE status='Entregado'
-      AND DATE_TRUNC('month', created_at)=DATE_TRUNC('month', CURRENT_DATE)
-    `);
-
-    const todayOrders = await pool.query(`
-      SELECT COUNT(*)
-      FROM orders
-      WHERE DATE(created_at)=CURRENT_DATE
-    `);
-
-    const monthOrders = await pool.query(`
-      SELECT COUNT(*)
-      FROM orders
-      WHERE DATE_TRUNC('month', created_at)=DATE_TRUNC('month', CURRENT_DATE)
-    `);
-
     return res.json({
-      totalOrders: Number(totalOrders.rows[0].count),
-      pendingOrders: Number(pendingOrders.rows[0].count),
-      onWayOrders: Number(onWayOrders.rows[0].count),
-      deliveredOrders: Number(deliveredOrders.rows[0].count),
-      canceledOrders: Number(canceledOrders.rows[0].count),
-      totalCustomers: Number(totalCustomers.rows[0].count),
+      todayOrders: Number(stats.rows[0].today_orders),
+      todayPendingOrders: Number(stats.rows[0].today_pending_orders),
+      todayOnWayOrders: Number(stats.rows[0].today_on_way_orders),
+      todayDeliveredOrders: Number(stats.rows[0].today_delivered_orders),
 
-      totalIncome: Number(totalIncome.rows[0].total),
-      todayIncome: Number(todayIncome.rows[0].total),
-      monthIncome: Number(monthIncome.rows[0].total),
+      monthOrders: Number(stats.rows[0].month_orders),
+      monthIncome: Number(stats.rows[0].month_income),
 
-      todayOrders: Number(todayOrders.rows[0].count),
-      monthOrders: Number(monthOrders.rows[0].count)
+      totalCustomers: Number(customers.rows[0].count),
+      totalIncome: Number(stats.rows[0].total_income)
     });
   } catch (error) {
     return res.status(500).json({
