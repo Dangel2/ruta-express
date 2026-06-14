@@ -12,7 +12,8 @@ import {
   getAdminServices,
   createAdminService,
   toggleAdminService,
-  deleteAdminService
+  deleteAdminService,
+  deleteAdminPromotion
 } from "../services/api";
 
 export default function AdminDashboard() {
@@ -37,6 +38,18 @@ export default function AdminDashboard() {
 
   const [promoMessage, setPromoMessage] = useState("");
   const [serviceMessage, setServiceMessage] = useState("");
+
+  function formatDate(date) {
+    return new Date(date).toLocaleString("es-NI", {
+      timeZone: "America/Managua",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+  }
 
   async function loadData() {
     const statsData = await getDashboardStats();
@@ -86,6 +99,15 @@ export default function AdminDashboard() {
     await toggleAdminPromotion(id);
     loadData();
   }
+  
+  async function handleDeletePromotion(id) {
+  const confirmDelete = confirm("¿Seguro que deseas eliminar esta promoción?");
+
+  if (!confirmDelete) return;
+
+  await deleteAdminPromotion(id);
+  loadData();
+}
 
   function handleServiceChange(e) {
     setServiceForm({
@@ -151,7 +173,7 @@ export default function AdminDashboard() {
     Nombre: customer.name,
     Telefono: customer.phone,
     Correo: customer.email,
-    Registro: customer.created_at
+    Registro: formatDate(customer.created_at)
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -184,7 +206,7 @@ function exportOrdersExcel() {
     Destino: order.destination,
     Precio: order.price,
     Estado: order.status,
-    Fecha: order.created_at
+    Fecha: formatDate(order.created_at)
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -366,12 +388,21 @@ function exportOrdersExcel() {
                 </span>
               </div>
 
-              <button
-                onClick={() => handleTogglePromotion(promo.id)}
-                className="mt-4 bg-black border border-gray-700 hover:border-red-600 px-4 py-2 rounded-lg"
-              >
-                {promo.active ? "Desactivar" : "Activar"}
-              </button>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => handleTogglePromotion(promo.id)}
+                  className="bg-black border border-gray-700 hover:border-red-600 px-4 py-2 rounded-lg"
+                >
+                  {promo.active ? "Desactivar" : "Activar"}
+                </button>
+
+                <button
+                  onClick={() => handleDeletePromotion(promo.id)}
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -519,6 +550,7 @@ function exportOrdersExcel() {
                 <p className="text-gray-300">Teléfono: {order.customer_phone}</p>
                 <p className="text-gray-300">Origen: {order.origin}</p>
                 <p className="text-gray-300">Destino: {order.destination}</p>
+                <p className="text-gray-300">Fecha: {formatDate(order.created_at)}</p>
 
                 <p className="text-gray-300">
                   Precio del servicio:{" "}

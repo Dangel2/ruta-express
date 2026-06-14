@@ -6,7 +6,8 @@ import {
   getAllPromotions,
   createPromotion,
   updatePromotion,
-  togglePromotion
+  togglePromotion,
+  deletePromotion
 } from "../controllers/promotions.controller.js";
 
 const router = express.Router();
@@ -27,5 +28,6 @@ router.get("/admin/all", authMiddleware, adminOnly, getAllPromotions);
 router.post("/admin", authMiddleware, adminOnly, createPromotion);
 router.put("/admin/:id", authMiddleware, adminOnly, updatePromotion);
 router.put("/admin/:id/toggle", authMiddleware, adminOnly, togglePromotion);
+router.delete("/admin/:id", authMiddleware, adminOnly, deletePromotion);
 
 export default router;

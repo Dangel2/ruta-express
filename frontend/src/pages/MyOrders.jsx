@@ -208,7 +208,15 @@ export default function MyOrders() {
                         Fecha
                       </p>
                       <p>
-                        {new Date(order.created_at).toLocaleString()}
+                        {new Date(order.created_at).toLocaleString("es-NI", {
+  timeZone: "America/Managua",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true
+})}
                       </p>
                     </div>
                   </div>

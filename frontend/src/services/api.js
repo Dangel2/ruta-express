@@ -260,3 +260,16 @@ export async function deleteAdminService(id) {
 
   return response.json();
 }
+
+export async function deleteAdminPromotion(id) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/promotions/admin/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
