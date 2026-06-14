@@ -285,34 +285,42 @@ export default function AdminDashboard() {
 
         <h2 className="text-2xl font-bold mb-4">Dashboard Diario</h2>
 
-        <div className="grid md:grid-cols-4 gap-4 mb-10">
+        <div className="grid md:grid-cols-5 gap-4 mb-10">
           <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
             <p className="text-gray-400">Pedidos de Hoy</p>
             <h2 className="text-3xl font-bold text-red-500">
-              {stats.todayOrders}
+              {stats.todayOrders ?? 0}
             </h2>
           </div>
 
           <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
             <p className="text-gray-400">Pendientes de Hoy</p>
             <h2 className="text-3xl font-bold text-yellow-400">
-              {stats.todayPendingOrders}
+              {stats.todayPendingOrders ?? stats.pendingOrders ?? 0}
             </h2>
           </div>
 
           <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
             <p className="text-gray-400">En Camino Hoy</p>
             <h2 className="text-3xl font-bold text-blue-400">
-              {stats.todayOnWayOrders}
+              {stats.todayOnWayOrders ?? stats.onWayOrders ?? 0}
             </h2>
           </div>
 
           <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
             <p className="text-gray-400">Entregados Hoy</p>
             <h2 className="text-3xl font-bold text-green-400">
-              {stats.todayDeliveredOrders}
+              {stats.todayDeliveredOrders ?? stats.deliveredOrders ?? 0}
             </h2>
           </div>
+		  
+		  <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
+  <p className="text-gray-400">Ingresos de Hoy</p>
+  <h2 className="text-3xl font-bold text-emerald-400">
+    C$ {stats.todayIncome ?? 0}
+  </h2>
+</div>
+		  
         </div>
 
         <h2 className="text-2xl font-bold mb-4">Dashboard Mensual</h2>

@@ -128,31 +128,36 @@ export async function getDashboardStats(req, res) {
         ) AS today_orders,
 
         COUNT(*) FILTER (
-          WHERE status = 'Pendiente'
+          WHERE TRIM(status) = 'Pendiente'
           AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
         ) AS today_pending_orders,
 
         COUNT(*) FILTER (
-          WHERE status = 'En camino'
+          WHERE TRIM(status) = 'En camino'
           AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
         ) AS today_on_way_orders,
 
         COUNT(*) FILTER (
-          WHERE status = 'Entregado'
+          WHERE TRIM(status) = 'Entregado'
           AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
         ) AS today_delivered_orders,
+
+        COALESCE(SUM(price) FILTER (
+          WHERE TRIM(status) = 'Entregado'
+          AND DATE(created_at) = DATE(NOW() AT TIME ZONE 'America/Managua')
+        ), 0) AS today_income,
 
         COUNT(*) FILTER (
           WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Managua')
         ) AS month_orders,
 
         COALESCE(SUM(price) FILTER (
-          WHERE status = 'Entregado'
+          WHERE TRIM(status) = 'Entregado'
           AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Managua')
         ), 0) AS month_income,
 
         COALESCE(SUM(price) FILTER (
-          WHERE status = 'Entregado'
+          WHERE TRIM(status) = 'Entregado'
         ), 0) AS total_income
       FROM orders
     `);
@@ -166,6 +171,7 @@ export async function getDashboardStats(req, res) {
       todayPendingOrders: Number(stats.rows[0].today_pending_orders),
       todayOnWayOrders: Number(stats.rows[0].today_on_way_orders),
       todayDeliveredOrders: Number(stats.rows[0].today_delivered_orders),
+      todayIncome: Number(stats.rows[0].today_income),
 
       monthOrders: Number(stats.rows[0].month_orders),
       monthIncome: Number(stats.rows[0].month_income),

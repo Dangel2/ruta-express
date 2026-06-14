@@ -9,12 +9,18 @@ export async function createOrder(req, res) {
       destination,
       description,
       price,
+
       origin_address,
       destination_address,
+
       origin_lat,
       origin_lng,
+
       destination_lat,
-      destination_lng
+      destination_lng,
+
+      price_type,
+      distance_km
     } = req.body;
 
     const finalOrigin = origin || origin_address;
@@ -39,9 +45,16 @@ export async function createOrder(req, res) {
         origin_lat,
         origin_lng,
         destination_lat,
-        destination_lng
+        destination_lng,
+        price_type,
+        distance_km
       )
-      VALUES ($1, $2, $3, $4, $5, 'Pendiente', $6, $7, $8, $9, $10, $11)
+      VALUES (
+        $1, $2, $3, $4, $5,
+        'Pendiente',
+        $6, $7, $8, $9, $10, $11,
+        $12, $13
+      )
       RETURNING *`,
       [
         customerId,
@@ -49,12 +62,18 @@ export async function createOrder(req, res) {
         finalDestination,
         description || "",
         price || 0,
+
         origin_address || finalOrigin,
         destination_address || finalDestination,
+
         origin_lat || null,
         origin_lng || null,
+
         destination_lat || null,
-        destination_lng || null
+        destination_lng || null,
+
+        price_type || "fixed",
+        distance_km || 0
       ]
     );
 

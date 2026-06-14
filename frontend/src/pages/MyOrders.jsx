@@ -3,17 +3,37 @@ import { getMyOrders } from "../services/api";
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     async function loadOrders() {
-      const result = await getMyOrders();
-      setOrders(result.orders || []);
+      try {
+        setLoading(true);
+
+        const result = await getMyOrders();
+
+        if (result.orders) {
+          setOrders(result.orders);
+          setMessage("");
+        } else {
+          setOrders([]);
+          setMessage(
+            result.message || "No se pudieron cargar los pedidos."
+          );
+        }
+      } catch (error) {
+        console.error("Error cargando pedidos:", error);
+        setMessage("Ocurrió un error al cargar los pedidos.");
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadOrders();
   }, []);
 
-  const getStatusClass = (status) => {
+  function getStatusClass(status) {
     if (status === "Entregado") {
       return "bg-green-600/10 text-green-400 border-green-500";
     }
@@ -27,9 +47,9 @@ export default function MyOrders() {
     }
 
     return "bg-yellow-600/10 text-yellow-400 border-yellow-500";
-  };
+  }
 
-  const getStepState = (orderStatus, step) => {
+  function getStepState(orderStatus, step) {
     const steps = ["Pendiente", "En camino", "Entregado"];
 
     if (orderStatus === "Cancelado") {
@@ -39,14 +59,18 @@ export default function MyOrders() {
     const currentIndex = steps.indexOf(orderStatus);
     const stepIndex = steps.indexOf(step);
 
+    if (currentIndex === -1) {
+      return "pendiente";
+    }
+
     if (stepIndex <= currentIndex) {
       return "activo";
     }
 
     return "pendiente";
-  };
+  }
 
-  const getCircleClass = (state) => {
+  function getCircleClass(state) {
     if (state === "cancelado") {
       return "bg-red-600 border-red-500 text-white";
     }
@@ -56,9 +80,9 @@ export default function MyOrders() {
     }
 
     return "bg-black border-gray-600 text-gray-500";
-  };
+  }
 
-  const getLineClass = (state) => {
+  function getLineClass(state) {
     if (state === "cancelado") {
       return "bg-red-600";
     }
@@ -68,19 +92,124 @@ export default function MyOrders() {
     }
 
     return "bg-gray-700";
-  };
+  }
 
-  const getGoogleMapsUrl = (order) => {
-    const origin =
-      order.origin_address || order.origin || "";
+  function getPriceTypeLabel(priceType) {
+    if (priceType === "distance") {
+      return "Tarifa por distancia";
+    }
 
-    const destination =
-      order.destination_address || order.destination || "";
+    if (priceType === "manual") {
+      return "Tarifa ajustada manualmente";
+    }
+
+    return "Tarifa fija";
+  }
+
+  function getPriceTypeClass(priceType) {
+    if (priceType === "distance") {
+      return "text-blue-400 border-blue-500 bg-blue-600/10";
+    }
+
+    if (priceType === "manual") {
+      return "text-purple-400 border-purple-500 bg-purple-600/10";
+    }
+
+    return "text-green-400 border-green-500 bg-green-600/10";
+  }
+
+  function getOriginText(order) {
+    return (
+      order.origin_address ||
+      order.origin ||
+      "Punto A no registrado"
+    );
+  }
+
+  function getDestinationText(order) {
+    return (
+      order.destination_address ||
+      order.destination ||
+      "Punto B no registrado"
+    );
+  }
+
+  function getOriginForMap(order) {
+    if (order.origin_lat && order.origin_lng) {
+      return `${order.origin_lat},${order.origin_lng}`;
+    }
+
+    return getOriginText(order);
+  }
+
+  function getDestinationForMap(order) {
+    if (order.destination_lat && order.destination_lng) {
+      return `${order.destination_lat},${order.destination_lng}`;
+    }
+
+    return getDestinationText(order);
+  }
+
+  function getGoogleMapsUrl(order) {
+    const origin = getOriginForMap(order);
+    const destination = getDestinationForMap(order);
 
     return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
       origin
     )}&destination=${encodeURIComponent(destination)}`;
-  };
+  }
+
+  function getMapEmbedUrl(order) {
+    const destination = getDestinationForMap(order);
+
+    return `https://maps.google.com/maps?q=${encodeURIComponent(
+      destination
+    )}&z=15&output=embed`;
+  }
+
+  function formatDate(date) {
+    if (!date) {
+      return "Fecha no disponible";
+    }
+
+    return new Date(date).toLocaleString("es-NI", {
+      timeZone: "America/Managua",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+  }
+
+  function formatPrice(price) {
+    return Number(price || 0).toFixed(2);
+  }
+
+  function formatDistance(distance) {
+    const value = Number(distance || 0);
+
+    if (value <= 0) {
+      return "No registrada";
+    }
+
+    return `${value.toFixed(2)} km`;
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
+        <section className="max-w-5xl mx-auto">
+          <div className="bg-[#151515] border border-gray-800 rounded-2xl p-8 text-center">
+            <p className="text-gray-400">
+              Cargando tus pedidos...
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
@@ -91,9 +220,16 @@ export default function MyOrders() {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            Revisa el historial y seguimiento de tus mandados.
+            Revisa el historial, la tarifa y el seguimiento de tus
+            mandados.
           </p>
         </div>
+
+        {message && (
+          <div className="mb-6 bg-red-600/10 border border-red-500 text-red-400 rounded-xl p-4 text-center">
+            {message}
+          </div>
+        )}
 
         {orders.length === 0 ? (
           <div className="bg-[#151515] border border-red-600/30 rounded-2xl p-8 text-center">
@@ -119,10 +255,13 @@ export default function MyOrders() {
                 "Entregado"
               );
 
+              const priceType = order.price_type || "fixed";
+              const isDistancePrice = priceType === "distance";
+
               return (
-                <div
+                <article
                   key={order.id}
-                  className="bg-[#151515] border border-gray-800 rounded-2xl p-6 shadow-lg"
+                  className="bg-[#151515] border border-gray-800 rounded-2xl p-5 md:p-6 shadow-lg"
                 >
                   <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
                     <h2 className="text-xl font-bold">
@@ -138,9 +277,7 @@ export default function MyOrders() {
                     </span>
                   </div>
 
-                  {/* Seguimiento */}
-
-                  <div className="mb-6">
+                  <div className="mb-7">
                     <div className="grid grid-cols-5 items-center">
                       <div className="flex flex-col items-center">
                         <div
@@ -151,7 +288,7 @@ export default function MyOrders() {
                           1
                         </div>
 
-                        <p className="text-xs mt-2 text-gray-400">
+                        <p className="text-xs mt-2 text-gray-400 text-center">
                           Pendiente
                         </p>
                       </div>
@@ -160,7 +297,7 @@ export default function MyOrders() {
                         className={`h-1 ${getLineClass(
                           caminoState
                         )}`}
-                      ></div>
+                      />
 
                       <div className="flex flex-col items-center">
                         <div
@@ -171,7 +308,7 @@ export default function MyOrders() {
                           2
                         </div>
 
-                        <p className="text-xs mt-2 text-gray-400">
+                        <p className="text-xs mt-2 text-gray-400 text-center">
                           En camino
                         </p>
                       </div>
@@ -180,7 +317,7 @@ export default function MyOrders() {
                         className={`h-1 ${getLineClass(
                           entregadoState
                         )}`}
-                      ></div>
+                      />
 
                       <div className="flex flex-col items-center">
                         <div
@@ -191,7 +328,7 @@ export default function MyOrders() {
                           3
                         </div>
 
-                        <p className="text-xs mt-2 text-gray-400">
+                        <p className="text-xs mt-2 text-gray-400 text-center">
                           Entregado
                         </p>
                       </div>
@@ -204,29 +341,29 @@ export default function MyOrders() {
                     )}
                   </div>
 
-                  {/* Datos */}
-
                   <div className="grid md:grid-cols-2 gap-4 text-gray-300">
-                    <div>
-                      <p className="text-gray-500 text-sm">
-                        Origen
+                    <div className="bg-black/40 border border-gray-800 rounded-xl p-4">
+                      <p className="text-red-400 text-sm font-bold mb-1">
+                        Punto A
                       </p>
 
-                      <p>
-                        {order.origin_address ||
-                          order.origin}
+                      <p className="text-sm text-gray-500 mb-2">
+                        Lugar donde se realiza el mandado
                       </p>
+
+                      <p>{getOriginText(order)}</p>
                     </div>
 
-                    <div>
-                      <p className="text-gray-500 text-sm">
-                        Destino
+                    <div className="bg-black/40 border border-gray-800 rounded-xl p-4">
+                      <p className="text-red-400 text-sm font-bold mb-1">
+                        Punto B
                       </p>
 
-                      <p>
-                        {order.destination_address ||
-                          order.destination}
+                      <p className="text-sm text-gray-500 mb-2">
+                        Lugar donde se entrega el pedido
                       </p>
+
+                      <p>{getDestinationText(order)}</p>
                     </div>
 
                     <div className="md:col-span-2">
@@ -234,16 +371,45 @@ export default function MyOrders() {
                         Descripción
                       </p>
 
-                      <p>{order.description}</p>
+                      <p>
+                        {order.description ||
+                          "Sin descripción adicional"}
+                      </p>
                     </div>
+
+                    <div>
+                      <p className="text-gray-500 text-sm mb-2">
+                        Tipo de tarifa
+                      </p>
+
+                      <span
+                        className={`inline-block border px-3 py-1 rounded-full text-sm font-bold ${getPriceTypeClass(
+                          priceType
+                        )}`}
+                      >
+                        {getPriceTypeLabel(priceType)}
+                      </span>
+                    </div>
+
+                    {isDistancePrice && (
+                      <div>
+                        <p className="text-gray-500 text-sm">
+                          Distancia estimada
+                        </p>
+
+                        <p className="font-bold text-blue-400">
+                          {formatDistance(order.distance_km)}
+                        </p>
+                      </div>
+                    )}
 
                     <div>
                       <p className="text-gray-500 text-sm">
                         Precio del servicio
                       </p>
 
-                      <p className="font-bold text-green-400">
-                        C$ {order.price}
+                      <p className="text-2xl font-bold text-green-400">
+                        C$ {formatPrice(order.price)}
                       </p>
                     </div>
 
@@ -252,51 +418,31 @@ export default function MyOrders() {
                         Fecha
                       </p>
 
-                      <p>
-                        {new Date(
-                          order.created_at
-                        ).toLocaleString("es-NI", {
-                          timeZone:
-                            "America/Managua",
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true
-                        })}
-                      </p>
+                      <p>{formatDate(order.created_at)}</p>
                     </div>
                   </div>
-
-                  {/* Botón Ver Ruta */}
 
                   <div className="mt-6">
                     <a
                       href={getGoogleMapsUrl(order)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 transition px-5 py-3 rounded-lg font-bold"
+                      className="inline-flex items-center justify-center w-full md:w-auto gap-2 bg-red-600 hover:bg-red-700 transition px-5 py-3 rounded-lg font-bold"
                     >
-                      Ver Ruta
+                      Ver Ruta Punto A → Punto B
                     </a>
                   </div>
 
-                  {/* Mini mapa */}
-
                   <div className="mt-4 overflow-hidden rounded-xl border border-gray-700">
                     <iframe
-                      title={`map-${order.id}`}
+                      title={`Mapa del pedido ${order.id}`}
                       width="100%"
                       height="250"
                       loading="lazy"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                        order.destination_address ||
-                          order.destination
-                      )}&z=15&output=embed`}
+                      src={getMapEmbedUrl(order)}
                     />
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
