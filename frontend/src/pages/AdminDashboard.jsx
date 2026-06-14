@@ -15,6 +15,9 @@ export default function AdminDashboard() {
   const [customers, setCustomers] = useState([]);
   const [promotions, setPromotions] = useState([]);
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Todos");
+
   const [promoForm, setPromoForm] = useState({
     title: "",
     description: ""
@@ -57,10 +60,7 @@ export default function AdminDashboard() {
 
     if (result.promotion) {
       setPromoMessage("Promoción creada correctamente.");
-      setPromoForm({
-        title: "",
-        description: ""
-      });
+      setPromoForm({ title: "", description: "" });
       loadData();
     } else {
       setPromoMessage(result.message || "No se pudo crear la promoción.");
@@ -70,6 +70,27 @@ export default function AdminDashboard() {
   async function handleTogglePromotion(id) {
     await toggleAdminPromotion(id);
     loadData();
+  }
+
+  const filteredOrders = orders.filter((order) => {
+    const text = search.toLowerCase();
+
+    const matchesSearch =
+      order.customer_name?.toLowerCase().includes(text) ||
+      order.customer_phone?.toLowerCase().includes(text) ||
+      order.origin?.toLowerCase().includes(text) ||
+      order.destination?.toLowerCase().includes(text) ||
+      String(order.id).includes(text);
+
+    const matchesStatus =
+      statusFilter === "Todos" || order.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  function clearFilters() {
+    setSearch("");
+    setStatusFilter("Todos");
   }
 
   if (!stats) {
@@ -122,9 +143,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">
-          Gestión de Promociones
-        </h2>
+        <h2 className="text-2xl font-bold mb-4">Gestión de Promociones</h2>
 
         <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 mb-8">
           {promoMessage && (
@@ -167,12 +186,8 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-red-500">
-                    {promo.title}
-                  </h3>
-                  <p className="text-gray-300">
-                    {promo.description}
-                  </p>
+                  <h3 className="font-bold text-red-500">{promo.title}</h3>
+                  <p className="text-gray-300">{promo.description}</p>
                 </div>
 
                 <span
@@ -196,9 +211,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">
-          Clientes Registrados
-        </h2>
+        <h2 className="text-2xl font-bold mb-4">Clientes Registrados</h2>
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {customers.map((customer) => (
@@ -206,83 +219,112 @@ export default function AdminDashboard() {
               key={customer.id}
               className="bg-[#151515] border border-gray-800 rounded-xl p-4"
             >
-              <p className="font-bold text-red-500">
-                {customer.name}
-              </p>
+              <p className="font-bold text-red-500">{customer.name}</p>
               <p className="text-gray-300">{customer.email}</p>
               <p className="text-gray-400">{customer.phone}</p>
             </div>
           ))}
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">
-          Pedidos
-        </h2>
+        <h2 className="text-2xl font-bold mb-4">Pedidos</h2>
+
+        <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 mb-6">
+          <div className="grid md:grid-cols-3 gap-4">
+            <input
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              placeholder="Buscar por cliente, teléfono, origen, destino o #pedido"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <select
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option>Todos</option>
+              <option>Pendiente</option>
+              <option>En camino</option>
+              <option>Entregado</option>
+              <option>Cancelado</option>
+            </select>
+
+            <button
+              onClick={clearFilters}
+              className="bg-red-600 hover:bg-red-700 rounded-lg font-bold"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+
+          <p className="text-gray-400 mt-4">
+            Mostrando {filteredOrders.length} de {orders.length} pedidos.
+          </p>
+        </div>
 
         <div className="grid gap-4">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-[#151515] border border-gray-800 rounded-xl p-5"
-            >
-              <p className="font-bold text-xl">
-                Pedido #{order.id}
-              </p>
-
-              <p className="text-gray-300">
-                Cliente: {order.customer_name}
-              </p>
-
-              <p className="text-gray-300">
-                Teléfono: {order.customer_phone}
-              </p>
-
-              <p className="text-gray-300">
-                Origen: {order.origin}
-              </p>
-
-              <p className="text-gray-300">
-                Destino: {order.destination}
-              </p>
-
-              <p className="text-gray-300">
-                Estado actual:{" "}
-                <span className="font-bold text-red-500">
-                  {order.status}
-                </span>
-              </p>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                <button
-                  onClick={() => changeStatus(order.id, "Pendiente")}
-                  className="bg-yellow-600 px-3 py-2 rounded"
-                >
-                  Pendiente
-                </button>
-
-                <button
-                  onClick={() => changeStatus(order.id, "En camino")}
-                  className="bg-blue-600 px-3 py-2 rounded"
-                >
-                  En camino
-                </button>
-
-                <button
-                  onClick={() => changeStatus(order.id, "Entregado")}
-                  className="bg-green-600 px-3 py-2 rounded"
-                >
-                  Entregado
-                </button>
-
-                <button
-                  onClick={() => changeStatus(order.id, "Cancelado")}
-                  className="bg-red-600 px-3 py-2 rounded"
-                >
-                  Cancelado
-                </button>
-              </div>
+          {filteredOrders.length === 0 ? (
+            <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 text-gray-400">
+              No hay pedidos que coincidan con la búsqueda.
             </div>
-          ))}
+          ) : (
+            filteredOrders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-[#151515] border border-gray-800 rounded-xl p-5"
+              >
+                <p className="font-bold text-xl">Pedido #{order.id}</p>
+
+                <p className="text-gray-300">
+                  Cliente: {order.customer_name}
+                </p>
+
+                <p className="text-gray-300">
+                  Teléfono: {order.customer_phone}
+                </p>
+
+                <p className="text-gray-300">Origen: {order.origin}</p>
+                <p className="text-gray-300">Destino: {order.destination}</p>
+
+                <p className="text-gray-300">
+                  Estado actual:{" "}
+                  <span className="font-bold text-red-500">
+                    {order.status}
+                  </span>
+                </p>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button
+                    onClick={() => changeStatus(order.id, "Pendiente")}
+                    className="bg-yellow-600 px-3 py-2 rounded"
+                  >
+                    Pendiente
+                  </button>
+
+                  <button
+                    onClick={() => changeStatus(order.id, "En camino")}
+                    className="bg-blue-600 px-3 py-2 rounded"
+                  >
+                    En camino
+                  </button>
+
+                  <button
+                    onClick={() => changeStatus(order.id, "Entregado")}
+                    className="bg-green-600 px-3 py-2 rounded"
+                  >
+                    Entregado
+                  </button>
+
+                  <button
+                    onClick={() => changeStatus(order.id, "Cancelado")}
+                    className="bg-red-600 px-3 py-2 rounded"
+                  >
+                    Cancelado
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </main>
