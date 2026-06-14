@@ -3,22 +3,35 @@ import {
   getDashboardStats,
   getAllOrders,
   getAllCustomers,
-  updateOrderStatus
+  updateOrderStatus,
+  getAdminPromotions,
+  createAdminPromotion,
+  toggleAdminPromotion
 } from "../services/api";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+
+  const [promoForm, setPromoForm] = useState({
+    title: "",
+    description: ""
+  });
+
+  const [promoMessage, setPromoMessage] = useState("");
 
   async function loadData() {
     const statsData = await getDashboardStats();
     const ordersData = await getAllOrders();
     const customersData = await getAllCustomers();
+    const promotionsData = await getAdminPromotions();
 
     setStats(statsData);
     setOrders(ordersData.orders || []);
     setCustomers(customersData.customers || []);
+    setPromotions(promotionsData.promotions || []);
   }
 
   useEffect(() => {
@@ -27,6 +40,35 @@ export default function AdminDashboard() {
 
   async function changeStatus(id, status) {
     await updateOrderStatus(id, status);
+    loadData();
+  }
+
+  function handlePromoChange(e) {
+    setPromoForm({
+      ...promoForm,
+      [e.target.name]: e.target.value
+    });
+  }
+
+  async function handleCreatePromotion(e) {
+    e.preventDefault();
+
+    const result = await createAdminPromotion(promoForm);
+
+    if (result.promotion) {
+      setPromoMessage("Promoción creada correctamente.");
+      setPromoForm({
+        title: "",
+        description: ""
+      });
+      loadData();
+    } else {
+      setPromoMessage(result.message || "No se pudo crear la promoción.");
+    }
+  }
+
+  async function handleTogglePromotion(id) {
+    await toggleAdminPromotion(id);
     loadData();
   }
 
@@ -78,6 +120,80 @@ export default function AdminDashboard() {
               {stats.totalCustomers}
             </h2>
           </div>
+        </div>
+
+        <h2 className="text-2xl font-bold mb-4">
+          Gestión de Promociones
+        </h2>
+
+        <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 mb-8">
+          {promoMessage && (
+            <div className="mb-4 border border-red-600/40 bg-red-600/10 text-red-400 p-3 rounded-lg">
+              {promoMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleCreatePromotion} className="grid gap-4">
+            <input
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="title"
+              placeholder="Título de la promoción"
+              value={promoForm.title}
+              onChange={handlePromoChange}
+            />
+
+            <textarea
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="description"
+              placeholder="Descripción de la promoción"
+              value={promoForm.description}
+              onChange={handlePromoChange}
+            />
+
+            <button
+              className="bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg font-bold"
+              type="submit"
+            >
+              Crear Promoción
+            </button>
+          </form>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
+          {promotions.map((promo) => (
+            <div
+              key={promo.id}
+              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
+            >
+              <div className="flex justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-red-500">
+                    {promo.title}
+                  </h3>
+                  <p className="text-gray-300">
+                    {promo.description}
+                  </p>
+                </div>
+
+                <span
+                  className={`h-fit px-3 py-1 rounded-full text-sm border ${
+                    promo.active
+                      ? "text-green-400 border-green-500 bg-green-600/10"
+                      : "text-red-400 border-red-500 bg-red-600/10"
+                  }`}
+                >
+                  {promo.active ? "Activa" : "Inactiva"}
+                </span>
+              </div>
+
+              <button
+                onClick={() => handleTogglePromotion(promo.id)}
+                className="mt-4 bg-black border border-gray-700 hover:border-red-600 px-4 py-2 rounded-lg"
+              >
+                {promo.active ? "Desactivar" : "Activar"}
+              </button>
+            </div>
+          ))}
         </div>
 
         <h2 className="text-2xl font-bold mb-4">
