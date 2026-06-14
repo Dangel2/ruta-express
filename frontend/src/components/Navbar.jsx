@@ -1,39 +1,70 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+  const adminToken = localStorage.getItem("adminToken");
+
+  function logoutClient() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("customer");
+    navigate("/");
+    window.location.reload();
+  }
+
+  function logoutAdmin() {
+    localStorage.removeItem("adminToken");
+    navigate("/");
+    window.location.reload();
+  }
+
   return (
     <nav className="bg-red-600 text-white p-4 shadow">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <h1 className="font-bold text-2xl">
+      <div className="max-w-7xl mx-auto flex flex-wrap gap-4 justify-between items-center">
+        <Link to="/" className="font-bold text-2xl">
           Ruta Express
-        </h1>
+        </Link>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
           <Link to="/">Inicio</Link>
 
-          <Link to="/register">
-            Registro
-          </Link>
+          {!token && (
+            <>
+              <Link to="/register">Registro</Link>
+              <Link to="/login">Login</Link>
+            </>
+          )}
 
-          <Link to="/login">
-            Login
-          </Link>
+          {token && (
+            <>
+              <Link to="/profile">Perfil</Link>
+              <Link to="/create-order">Crear Pedido</Link>
+              <Link to="/my-orders">Mis Pedidos</Link>
 
-          <Link to="/create-order">
-            Crear Pedido
-          </Link>
+              <button
+                onClick={logoutClient}
+                className="bg-black px-3 py-1 rounded"
+              >
+                Cerrar sesión
+              </button>
+            </>
+          )}
 
-          <Link to="/my-orders">
-            Mis Pedidos
-          </Link>
-		  
-		  <Link to="/profile">
-           Perfil
-          </Link>
+          {!adminToken && <Link to="/admin">Admin</Link>}
 
-          <Link to="/admin">
-            Admin
-          </Link>
+          {adminToken && (
+            <>
+              <Link to="/admin/dashboard">Dashboard</Link>
+
+              <button
+                onClick={logoutAdmin}
+                className="bg-black px-3 py-1 rounded"
+              >
+                Salir admin
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>
