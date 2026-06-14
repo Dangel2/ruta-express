@@ -108,40 +108,79 @@ export default function AdminDashboard() {
           Dashboard Administrador
         </h1>
 
-        <div className="grid md:grid-cols-5 gap-4 mb-10">
-          <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
-            <p className="text-gray-400">Pedidos</p>
-            <h2 className="text-3xl font-bold">{stats.totalOrders}</h2>
-          </div>
+       <div className="grid md:grid-cols-5 gap-4 mb-6">
+  <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+    <p className="text-gray-400">Pedidos</p>
+    <h2 className="text-3xl font-bold">
+      {stats.totalOrders}
+    </h2>
+  </div>
 
-          <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
-            <p className="text-gray-400">Pendientes</p>
-            <h2 className="text-3xl font-bold text-yellow-400">
-              {stats.pendingOrders}
-            </h2>
-          </div>
+  <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
+    <p className="text-gray-400">Pendientes</p>
+    <h2 className="text-3xl font-bold text-yellow-400">
+      {stats.pendingOrders}
+    </h2>
+  </div>
 
-          <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
-            <p className="text-gray-400">En camino</p>
-            <h2 className="text-3xl font-bold text-blue-400">
-              {stats.onWayOrders}
-            </h2>
-          </div>
+  <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
+    <p className="text-gray-400">En camino</p>
+    <h2 className="text-3xl font-bold text-blue-400">
+      {stats.onWayOrders}
+    </h2>
+  </div>
 
-          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
-            <p className="text-gray-400">Entregados</p>
-            <h2 className="text-3xl font-bold text-green-400">
-              {stats.deliveredOrders}
-            </h2>
-          </div>
+  <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
+    <p className="text-gray-400">Entregados</p>
+    <h2 className="text-3xl font-bold text-green-400">
+      {stats.deliveredOrders}
+    </h2>
+  </div>
 
-          <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
-            <p className="text-gray-400">Clientes</p>
-            <h2 className="text-3xl font-bold text-red-500">
-              {stats.totalCustomers}
-            </h2>
-          </div>
-        </div>
+  <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
+    <p className="text-gray-400">Clientes</p>
+    <h2 className="text-3xl font-bold text-red-500">
+      {stats.totalCustomers}
+    </h2>
+  </div>
+</div>
+
+<div className="grid md:grid-cols-5 gap-4 mb-10">
+  <div className="bg-[#151515] border border-green-600 rounded-xl p-4">
+    <p className="text-gray-400">Ingresos Totales</p>
+    <h2 className="text-2xl font-bold text-green-400">
+      C$ {stats.totalIncome}
+    </h2>
+  </div>
+
+  <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
+    <p className="text-gray-400">Ingresos Hoy</p>
+    <h2 className="text-2xl font-bold text-green-400">
+      C$ {stats.todayIncome}
+    </h2>
+  </div>
+
+  <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
+    <p className="text-gray-400">Ingresos Mes</p>
+    <h2 className="text-2xl font-bold text-emerald-400">
+      C$ {stats.monthIncome}
+    </h2>
+  </div>
+
+  <div className="bg-[#151515] border border-cyan-500 rounded-xl p-4">
+    <p className="text-gray-400">Pedidos Hoy</p>
+    <h2 className="text-2xl font-bold text-cyan-400">
+      {stats.todayOrders}
+    </h2>
+  </div>
+
+  <div className="bg-[#151515] border border-purple-500 rounded-xl p-4">
+    <p className="text-gray-400">Pedidos Mes</p>
+    <h2 className="text-2xl font-bold text-purple-400">
+      {stats.monthOrders}
+    </h2>
+  </div>
+</div>
 
         <h2 className="text-2xl font-bold mb-4">Gestión de Promociones</h2>
 
