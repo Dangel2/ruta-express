@@ -156,3 +156,49 @@ export async function updateMyProfile(profileData) {
 
   return response.json();
 }
+
+export async function getPublicPromotions() {
+  const response = await fetch(`${API_URL}/promotions`);
+
+  return response.json();
+}
+
+export async function getAdminPromotions() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/promotions/admin/all`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
+
+export async function createAdminPromotion(promotionData) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/promotions/admin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(promotionData)
+  });
+
+  return response.json();
+}
+
+export async function toggleAdminPromotion(id) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/promotions/admin/${id}/toggle`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}

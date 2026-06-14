@@ -1,21 +1,34 @@
+import { useEffect, useState } from "react";
+import { getPublicPromotions } from "../services/api";
+
 function Promotions() {
+  const [promotions, setPromotions] = useState([]);
+
+  useEffect(() => {
+    async function loadPromotions() {
+      const result = await getPublicPromotions();
+      setPromotions(result.promotions || []);
+    }
+
+    loadPromotions();
+  }, []);
+
   return (
     <section id="promociones">
-
       <h2>Promociones</h2>
 
-      <div className="promo-card">
-         Tu 4.º viaje de la semana es GRATIS
-      </div>
-
-      <div className="promo-card">
-         Tarifas especiales para negocios
-      </div>
-
-      <div className="promo-card">
-         Prioridad para clientes frecuentes
-      </div>
-
+      {promotions.length === 0 ? (
+        <div className="promo-card">
+          No hay promociones activas por el momento.
+        </div>
+      ) : (
+        promotions.map((promo) => (
+          <div className="promo-card" key={promo.id}>
+            <strong>{promo.title}</strong>
+            <p>{promo.description}</p>
+          </div>
+        ))
+      )}
     </section>
   );
 }
