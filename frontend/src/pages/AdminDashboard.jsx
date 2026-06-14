@@ -1,3 +1,5 @@
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { useEffect, useState } from "react";
 import {
   getDashboardStats,
@@ -142,6 +144,69 @@ export default function AdminDashboard() {
     setSearch("");
     setStatusFilter("Todos");
   }
+  
+  function exportCustomersExcel() {
+  const data = customers.map((customer) => ({
+    ID: customer.id,
+    Nombre: customer.name,
+    Telefono: customer.phone,
+    Correo: customer.email,
+    Registro: customer.created_at
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Clientes"
+  );
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array"
+  });
+
+  const file = new Blob([excelBuffer], {
+    type: "application/octet-stream"
+  });
+
+  saveAs(file, "clientes_ruta_express.xlsx");
+}
+
+function exportOrdersExcel() {
+  const data = orders.map((order) => ({
+    Pedido: order.id,
+    Cliente: order.customer_name,
+    Telefono: order.customer_phone,
+    Origen: order.origin,
+    Destino: order.destination,
+    Precio: order.price,
+    Estado: order.status,
+    Fecha: order.created_at
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Pedidos"
+  );
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array"
+  });
+
+  const file = new Blob([excelBuffer], {
+    type: "application/octet-stream"
+  });
+
+  saveAs(file, "pedidos_ruta_express.xlsx");
+}
 
   if (!stats) {
     return (
@@ -157,6 +222,22 @@ export default function AdminDashboard() {
         <h1 className="text-4xl font-bold text-red-600 mb-8">
           Dashboard Administrador
         </h1>
+		
+		<div className="flex flex-wrap gap-3 mb-8">
+  <button
+    onClick={exportCustomersExcel}
+    className="bg-green-600 hover:bg-green-700 px-4 py-3 rounded-lg font-bold"
+  >
+    Exportar Clientes Excel
+  </button>
+
+  <button
+    onClick={exportOrdersExcel}
+    className="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg font-bold"
+  >
+    Exportar Pedidos Excel
+  </button>
+</div>
 
         <div className="grid md:grid-cols-5 gap-4 mb-6">
           <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
