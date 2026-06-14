@@ -70,6 +70,18 @@ export default function MyOrders() {
     return "bg-gray-700";
   };
 
+  const getGoogleMapsUrl = (order) => {
+    const origin =
+      order.origin_address || order.origin || "";
+
+    const destination =
+      order.destination_address || order.destination || "";
+
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
+      origin
+    )}&destination=${encodeURIComponent(destination)}`;
+  };
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
       <section className="max-w-5xl mx-auto">
@@ -92,9 +104,20 @@ export default function MyOrders() {
         ) : (
           <div className="grid gap-5">
             {orders.map((order) => {
-              const pendienteState = getStepState(order.status, "Pendiente");
-              const caminoState = getStepState(order.status, "En camino");
-              const entregadoState = getStepState(order.status, "Entregado");
+              const pendienteState = getStepState(
+                order.status,
+                "Pendiente"
+              );
+
+              const caminoState = getStepState(
+                order.status,
+                "En camino"
+              );
+
+              const entregadoState = getStepState(
+                order.status,
+                "Entregado"
+              );
 
               return (
                 <div
@@ -115,6 +138,8 @@ export default function MyOrders() {
                     </span>
                   </div>
 
+                  {/* Seguimiento */}
+
                   <div className="mb-6">
                     <div className="grid grid-cols-5 items-center">
                       <div className="flex flex-col items-center">
@@ -125,13 +150,16 @@ export default function MyOrders() {
                         >
                           1
                         </div>
+
                         <p className="text-xs mt-2 text-gray-400">
                           Pendiente
                         </p>
                       </div>
 
                       <div
-                        className={`h-1 ${getLineClass(caminoState)}`}
+                        className={`h-1 ${getLineClass(
+                          caminoState
+                        )}`}
                       ></div>
 
                       <div className="flex flex-col items-center">
@@ -142,13 +170,16 @@ export default function MyOrders() {
                         >
                           2
                         </div>
+
                         <p className="text-xs mt-2 text-gray-400">
                           En camino
                         </p>
                       </div>
 
                       <div
-                        className={`h-1 ${getLineClass(entregadoState)}`}
+                        className={`h-1 ${getLineClass(
+                          entregadoState
+                        )}`}
                       ></div>
 
                       <div className="flex flex-col items-center">
@@ -159,6 +190,7 @@ export default function MyOrders() {
                         >
                           3
                         </div>
+
                         <p className="text-xs mt-2 text-gray-400">
                           Entregado
                         </p>
@@ -172,25 +204,36 @@ export default function MyOrders() {
                     )}
                   </div>
 
+                  {/* Datos */}
+
                   <div className="grid md:grid-cols-2 gap-4 text-gray-300">
                     <div>
                       <p className="text-gray-500 text-sm">
                         Origen
                       </p>
-                      <p>{order.origin}</p>
+
+                      <p>
+                        {order.origin_address ||
+                          order.origin}
+                      </p>
                     </div>
 
                     <div>
                       <p className="text-gray-500 text-sm">
                         Destino
                       </p>
-                      <p>{order.destination}</p>
+
+                      <p>
+                        {order.destination_address ||
+                          order.destination}
+                      </p>
                     </div>
 
                     <div className="md:col-span-2">
                       <p className="text-gray-500 text-sm">
                         Descripción
                       </p>
+
                       <p>{order.description}</p>
                     </div>
 
@@ -198,6 +241,7 @@ export default function MyOrders() {
                       <p className="text-gray-500 text-sm">
                         Precio del servicio
                       </p>
+
                       <p className="font-bold text-green-400">
                         C$ {order.price}
                       </p>
@@ -207,18 +251,50 @@ export default function MyOrders() {
                       <p className="text-gray-500 text-sm">
                         Fecha
                       </p>
+
                       <p>
-                        {new Date(order.created_at).toLocaleString("es-NI", {
-  timeZone: "America/Managua",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true
-})}
+                        {new Date(
+                          order.created_at
+                        ).toLocaleString("es-NI", {
+                          timeZone:
+                            "America/Managua",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true
+                        })}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Botón Ver Ruta */}
+
+                  <div className="mt-6">
+                    <a
+                      href={getGoogleMapsUrl(order)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 transition px-5 py-3 rounded-lg font-bold"
+                    >
+                      Ver Ruta
+                    </a>
+                  </div>
+
+                  {/* Mini mapa */}
+
+                  <div className="mt-4 overflow-hidden rounded-xl border border-gray-700">
+                    <iframe
+                      title={`map-${order.id}`}
+                      width="100%"
+                      height="250"
+                      loading="lazy"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                        order.destination_address ||
+                          order.destination
+                      )}&z=15&output=embed`}
+                    />
                   </div>
                 </div>
               );

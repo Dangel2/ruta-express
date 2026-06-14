@@ -3,19 +3,59 @@ import { pool } from "../config/db.js";
 export async function createOrder(req, res) {
   try {
     const customerId = req.user.id;
-    const { origin, destination, description, price } = req.body;
 
-    if (!origin || !destination) {
+    const {
+      origin,
+      destination,
+      description,
+      price,
+      origin_address,
+      destination_address,
+      origin_lat,
+      origin_lng,
+      destination_lat,
+      destination_lng
+    } = req.body;
+
+    const finalOrigin = origin || origin_address;
+    const finalDestination = destination || destination_address;
+
+    if (!finalOrigin || !finalDestination) {
       return res.status(400).json({
         message: "Origen y destino son obligatorios"
       });
     }
 
     const result = await pool.query(
-      `INSERT INTO orders (customer_id, origin, destination, description, price, status)
-       VALUES ($1, $2, $3, $4, $5, 'Pendiente')
-       RETURNING *`,
-      [customerId, origin, destination, description || "", price || 0]
+      `INSERT INTO orders (
+        customer_id,
+        origin,
+        destination,
+        description,
+        price,
+        status,
+        origin_address,
+        destination_address,
+        origin_lat,
+        origin_lng,
+        destination_lat,
+        destination_lng
+      )
+      VALUES ($1, $2, $3, $4, $5, 'Pendiente', $6, $7, $8, $9, $10, $11)
+      RETURNING *`,
+      [
+        customerId,
+        finalOrigin,
+        finalDestination,
+        description || "",
+        price || 0,
+        origin_address || finalOrigin,
+        destination_address || finalDestination,
+        origin_lat || null,
+        origin_lng || null,
+        destination_lat || null,
+        destination_lng || null
+      ]
     );
 
     return res.status(201).json({

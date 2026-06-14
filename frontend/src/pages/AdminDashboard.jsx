@@ -51,6 +51,15 @@ export default function AdminDashboard() {
     });
   }
 
+  function getGoogleMapsUrl(order) {
+    const origin = order.origin_address || order.origin || "";
+    const destination = order.destination_address || order.destination || "";
+
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
+      origin
+    )}&destination=${encodeURIComponent(destination)}`;
+  }
+
   async function loadData() {
     const statsData = await getDashboardStats();
     const ordersData = await getAllOrders();
@@ -99,15 +108,14 @@ export default function AdminDashboard() {
     await toggleAdminPromotion(id);
     loadData();
   }
-  
+
   async function handleDeletePromotion(id) {
-  const confirmDelete = confirm("¿Seguro que deseas eliminar esta promoción?");
+    const confirmDelete = confirm("¿Seguro que deseas eliminar esta promoción?");
+    if (!confirmDelete) return;
 
-  if (!confirmDelete) return;
-
-  await deleteAdminPromotion(id);
-  loadData();
-}
+    await deleteAdminPromotion(id);
+    loadData();
+  }
 
   function handleServiceChange(e) {
     setServiceForm({
@@ -154,6 +162,8 @@ export default function AdminDashboard() {
       order.customer_phone?.toLowerCase().includes(text) ||
       order.origin?.toLowerCase().includes(text) ||
       order.destination?.toLowerCase().includes(text) ||
+      order.origin_address?.toLowerCase().includes(text) ||
+      order.destination_address?.toLowerCase().includes(text) ||
       String(order.id).includes(text);
 
     const matchesStatus =
@@ -166,69 +176,62 @@ export default function AdminDashboard() {
     setSearch("");
     setStatusFilter("Todos");
   }
-  
+
   function exportCustomersExcel() {
-  const data = customers.map((customer) => ({
-    ID: customer.id,
-    Nombre: customer.name,
-    Telefono: customer.phone,
-    Correo: customer.email,
-    Registro: formatDate(customer.created_at)
-  }));
+    const data = customers.map((customer) => ({
+      ID: customer.id,
+      Nombre: customer.name,
+      Telefono: customer.phone,
+      Correo: customer.email,
+      Registro: formatDate(customer.created_at)
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Clientes"
-  );
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array"
-  });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    });
 
-  const file = new Blob([excelBuffer], {
-    type: "application/octet-stream"
-  });
+    const file = new Blob([excelBuffer], {
+      type: "application/octet-stream"
+    });
 
-  saveAs(file, "clientes_ruta_express.xlsx");
-}
+    saveAs(file, "clientes_ruta_express.xlsx");
+  }
 
-function exportOrdersExcel() {
-  const data = orders.map((order) => ({
-    Pedido: order.id,
-    Cliente: order.customer_name,
-    Telefono: order.customer_phone,
-    Origen: order.origin,
-    Destino: order.destination,
-    Precio: order.price,
-    Estado: order.status,
-    Fecha: formatDate(order.created_at)
-  }));
+  function exportOrdersExcel() {
+    const data = orders.map((order) => ({
+      Pedido: order.id,
+      Cliente: order.customer_name,
+      Telefono: order.customer_phone,
+      Origen: order.origin_address || order.origin,
+      Destino: order.destination_address || order.destination,
+      Precio: order.price,
+      Estado: order.status,
+      Fecha: formatDate(order.created_at),
+      Ruta: getGoogleMapsUrl(order)
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Pedidos"
-  );
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Pedidos");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array"
-  });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    });
 
-  const file = new Blob([excelBuffer], {
-    type: "application/octet-stream"
-  });
+    const file = new Blob([excelBuffer], {
+      type: "application/octet-stream"
+    });
 
-  saveAs(file, "pedidos_ruta_express.xlsx");
-}
+    saveAs(file, "pedidos_ruta_express.xlsx");
+  }
 
   if (!stats) {
     return (
@@ -244,22 +247,22 @@ function exportOrdersExcel() {
         <h1 className="text-4xl font-bold text-red-600 mb-8">
           Dashboard Administrador
         </h1>
-		
-		<div className="flex flex-wrap gap-3 mb-8">
-  <button
-    onClick={exportCustomersExcel}
-    className="bg-green-600 hover:bg-green-700 px-4 py-3 rounded-lg font-bold"
-  >
-    Exportar Clientes Excel
-  </button>
 
-  <button
-    onClick={exportOrdersExcel}
-    className="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg font-bold"
-  >
-    Exportar Pedidos Excel
-  </button>
-</div>
+        <div className="flex flex-wrap gap-3 mb-8">
+          <button
+            onClick={exportCustomersExcel}
+            className="bg-green-600 hover:bg-green-700 px-4 py-3 rounded-lg font-bold"
+          >
+            Exportar Clientes Excel
+          </button>
+
+          <button
+            onClick={exportOrdersExcel}
+            className="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg font-bold"
+          >
+            Exportar Pedidos Excel
+          </button>
+        </div>
 
         <div className="grid md:grid-cols-5 gap-4 mb-6">
           <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
@@ -370,7 +373,10 @@ function exportOrdersExcel() {
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {promotions.map((promo) => (
-            <div key={promo.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+            <div
+              key={promo.id}
+              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
+            >
               <div className="flex justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-red-500">{promo.title}</h3>
@@ -418,7 +424,10 @@ function exportOrdersExcel() {
             </div>
           )}
 
-          <form onSubmit={handleCreateService} className="grid md:grid-cols-3 gap-4">
+          <form
+            onSubmit={handleCreateService}
+            className="grid md:grid-cols-3 gap-4"
+          >
             <input
               className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
               name="name"
@@ -449,13 +458,14 @@ function exportOrdersExcel() {
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {services.map((service) => (
-            <div key={service.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+            <div
+              key={service.id}
+              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
+            >
               <div className="flex justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-red-500">{service.name}</h3>
-                  <p className="text-green-400 font-bold">
-                    C$ {service.price}
-                  </p>
+                  <p className="text-green-400 font-bold">C$ {service.price}</p>
                 </div>
 
                 <span
@@ -492,7 +502,10 @@ function exportOrdersExcel() {
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {customers.map((customer) => (
-            <div key={customer.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+            <div
+              key={customer.id}
+              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
+            >
               <p className="font-bold text-red-500">{customer.name}</p>
               <p className="text-gray-300">{customer.email}</p>
               <p className="text-gray-400">{customer.phone}</p>
@@ -543,14 +556,44 @@ function exportOrdersExcel() {
             </div>
           ) : (
             filteredOrders.map((order) => (
-              <div key={order.id} className="bg-[#151515] border border-gray-800 rounded-xl p-5">
+              <div
+                key={order.id}
+                className="bg-[#151515] border border-gray-800 rounded-xl p-5"
+              >
                 <p className="font-bold text-xl">Pedido #{order.id}</p>
 
-                <p className="text-gray-300">Cliente: {order.customer_name}</p>
-                <p className="text-gray-300">Teléfono: {order.customer_phone}</p>
-                <p className="text-gray-300">Origen: {order.origin}</p>
-                <p className="text-gray-300">Destino: {order.destination}</p>
-                <p className="text-gray-300">Fecha: {formatDate(order.created_at)}</p>
+                <p className="text-gray-300">
+                  Cliente: {order.customer_name}
+                </p>
+
+                <p className="text-gray-300">
+                  Teléfono: {order.customer_phone}
+                </p>
+
+                <p className="text-gray-300">
+                  Origen: {order.origin_address || order.origin}
+                </p>
+
+                <p className="text-gray-300">
+                  Destino: {order.destination_address || order.destination}
+                </p>
+
+                {order.origin_lat && order.origin_lng && (
+                  <p className="text-gray-400 text-sm">
+                    Coordenadas origen: {order.origin_lat}, {order.origin_lng}
+                  </p>
+                )}
+
+                {order.destination_lat && order.destination_lng && (
+                  <p className="text-gray-400 text-sm">
+                    Coordenadas destino: {order.destination_lat},{" "}
+                    {order.destination_lng}
+                  </p>
+                )}
+
+                <p className="text-gray-300">
+                  Fecha: {formatDate(order.created_at)}
+                </p>
 
                 <p className="text-gray-300">
                   Precio del servicio:{" "}
@@ -567,21 +610,54 @@ function exportOrdersExcel() {
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <button onClick={() => changeStatus(order.id, "Pendiente")} className="bg-yellow-600 px-3 py-2 rounded">
+                  <a
+                    href={getGoogleMapsUrl(order)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
+                  >
+                    Ver Ruta
+                  </a>
+
+                  <button
+                    onClick={() => changeStatus(order.id, "Pendiente")}
+                    className="bg-yellow-600 px-3 py-2 rounded"
+                  >
                     Pendiente
                   </button>
 
-                  <button onClick={() => changeStatus(order.id, "En camino")} className="bg-blue-600 px-3 py-2 rounded">
+                  <button
+                    onClick={() => changeStatus(order.id, "En camino")}
+                    className="bg-blue-600 px-3 py-2 rounded"
+                  >
                     En camino
                   </button>
 
-                  <button onClick={() => changeStatus(order.id, "Entregado")} className="bg-green-600 px-3 py-2 rounded">
+                  <button
+                    onClick={() => changeStatus(order.id, "Entregado")}
+                    className="bg-green-600 px-3 py-2 rounded"
+                  >
                     Entregado
                   </button>
 
-                  <button onClick={() => changeStatus(order.id, "Cancelado")} className="bg-red-600 px-3 py-2 rounded">
+                  <button
+                    onClick={() => changeStatus(order.id, "Cancelado")}
+                    className="bg-red-600 px-3 py-2 rounded"
+                  >
                     Cancelado
                   </button>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-xl border border-gray-700">
+                  <iframe
+                    title={`admin-map-${order.id}`}
+                    width="100%"
+                    height="250"
+                    loading="lazy"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                      order.destination_address || order.destination
+                    )}&z=15&output=embed`}
+                  />
                 </div>
               </div>
             ))

@@ -10,7 +10,11 @@ export default function CreateOrder() {
     origin: "",
     destination: "",
     description: "",
-    price: ""
+    price: "",
+    origin_lat: "",
+    origin_lng: "",
+    destination_lat: "",
+    destination_lng: ""
   });
 
   const [message, setMessage] = useState("");
@@ -44,6 +48,39 @@ export default function CreateOrder() {
     });
   };
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setMessage("Tu navegador no soporta geolocalización.");
+      return;
+    }
+
+    setMessage("Obteniendo ubicación...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setForm((prev) => ({
+          ...prev,
+          origin: `${lat}, ${lng}`,
+          origin_lat: lat,
+          origin_lng: lng
+        }));
+
+        setMessage("Ubicación obtenida correctamente.");
+      },
+      () => {
+        setMessage("No se pudo obtener la ubicación. Revisa los permisos del navegador.");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -51,7 +88,15 @@ export default function CreateOrder() {
       origin: form.origin,
       destination: form.destination,
       description: `Servicio: ${form.serviceType}. ${form.description}`,
-      price: Number(form.price)
+      price: Number(form.price),
+
+      origin_address: form.origin,
+      destination_address: form.destination,
+
+      origin_lat: form.origin_lat || null,
+      origin_lng: form.origin_lng || null,
+      destination_lat: form.destination_lat || null,
+      destination_lng: form.destination_lng || null
     });
 
     if (result.order) {
@@ -63,12 +108,23 @@ export default function CreateOrder() {
         origin: "",
         destination: "",
         description: "",
-        price: ""
+        price: "",
+        origin_lat: "",
+        origin_lng: "",
+        destination_lat: "",
+        destination_lng: ""
       });
     } else {
       setMessage(result.message || "No se pudo crear el pedido.");
     }
   };
+
+  const previewMapUrl =
+    form.origin && form.destination
+      ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
+          form.origin
+        )}&destination=${encodeURIComponent(form.destination)}`
+      : "";
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
@@ -115,14 +171,24 @@ export default function CreateOrder() {
               ))}
             </select>
 
-            <input
-              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              name="origin"
-              placeholder="Origen del mandado"
-              value={form.origin}
-              onChange={handleChange}
-              required
-            />
+            <div className="grid gap-2">
+              <input
+                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+                name="origin"
+                placeholder="Origen del mandado"
+                value={form.origin}
+                onChange={handleChange}
+                required
+              />
+
+              <button
+                type="button"
+                onClick={getCurrentLocation}
+                className="w-full bg-blue-600 hover:bg-blue-700 transition rounded-lg p-3 font-bold"
+              >
+                Usar mi ubicación actual
+              </button>
+            </div>
 
             <input
               className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
@@ -132,6 +198,17 @@ export default function CreateOrder() {
               onChange={handleChange}
               required
             />
+
+            {previewMapUrl && (
+              <a
+                href={previewMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-center bg-[#222] hover:bg-[#2d2d2d] border border-red-600/30 rounded-lg p-3 font-bold text-red-400"
+              >
+                Ver ruta antes de enviar
+              </a>
+            )}
 
             <textarea
               className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600 min-h-[120px]"
