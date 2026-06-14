@@ -13,26 +13,107 @@ export default function MyOrders() {
     loadOrders();
   }, []);
 
-  return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">
-        Mis Pedidos
-      </h2>
+  const getStatusClass = (status) => {
+    if (status === "Entregado") {
+      return "bg-green-600/10 text-green-400 border-green-500";
+    }
 
-      {orders.length === 0 ? (
-        <p>No tienes pedidos todavía.</p>
-      ) : (
-        orders.map((order) => (
-          <div key={order.id} className="border p-4 mb-3 rounded">
-            <p><strong>Pedido #{order.id}</strong></p>
-            <p>Origen: {order.origin}</p>
-            <p>Destino: {order.destination}</p>
-            <p>Descripción: {order.description}</p>
-            <p>Precio: C${order.price}</p>
-            <p>Estado: <strong>{order.status}</strong></p>
+    if (status === "En camino") {
+      return "bg-blue-600/10 text-blue-400 border-blue-500";
+    }
+
+    if (status === "Cancelado") {
+      return "bg-red-600/10 text-red-400 border-red-500";
+    }
+
+    return "bg-yellow-600/10 text-yellow-400 border-yellow-500";
+  };
+
+  return (
+    <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
+      <section className="max-w-5xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-red-600">
+            Mis Pedidos
+          </h1>
+
+          <p className="text-gray-400 mt-3">
+            Revisa el historial y estado de tus mandados.
+          </p>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="bg-[#151515] border border-red-600/30 rounded-2xl p-8 text-center">
+            <p className="text-gray-400">
+              Todavía no tienes pedidos registrados.
+            </p>
           </div>
-        ))
-      )}
-    </div>
+        ) : (
+          <div className="grid gap-5">
+            {orders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-[#151515] border border-gray-800 rounded-2xl p-6 shadow-lg"
+              >
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
+                  <h2 className="text-xl font-bold">
+                    Pedido #{order.id}
+                  </h2>
+
+                  <span
+                    className={`border px-4 py-1 rounded-full text-sm font-bold ${getStatusClass(
+                      order.status
+                    )}`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 text-gray-300">
+                  <div>
+                    <p className="text-gray-500 text-sm">
+                      Origen
+                    </p>
+                    <p>{order.origin}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-sm">
+                      Destino
+                    </p>
+                    <p>{order.destination}</p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <p className="text-gray-500 text-sm">
+                      Descripción
+                    </p>
+                    <p>{order.description}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-sm">
+                      Precio
+                    </p>
+                    <p className="font-bold text-white">
+                      C${order.price}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-sm">
+                      Fecha
+                    </p>
+                    <p>
+                      {new Date(order.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

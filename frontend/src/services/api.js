@@ -117,3 +117,15 @@ export async function updateOrderStatus(id, status) {
 
   return response.json();
 }
+
+export async function getAllCustomers() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/admin/customers`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}

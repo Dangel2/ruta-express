@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { registerUser } from "../services/api";
 
 export default function Register() {
@@ -9,6 +10,8 @@ export default function Register() {
     password: ""
   });
 
+  const [message, setMessage] = useState("");
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -17,59 +20,103 @@ export default function Register() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const result = await registerUser(form);
+  const result = await registerUser(form);
 
-    alert(result.message);
-  };
+  if (result.customer) {
+    setMessage(
+      "✅ Cuenta creada correctamente. Ya puedes iniciar sesión."
+    );
+
+    setForm({
+      name: "",
+      phone: "",
+      email: "",
+      password: ""
+    });
+  } else {
+    setMessage(
+      result.message || "❌ Este correo ya está registrado."
+    );
+  }
+};
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">
-        Registro Ruta Express
-      </h2>
+    <main className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-4">
+      <section className="w-full max-w-md bg-[#151515] border border-red-600/30 rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-red-600 text-center">
+          Crear cuenta
+        </h1>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          className="w-full border p-2 mb-3"
-          type="text"
-          name="name"
-          placeholder="Nombre"
-          onChange={handleChange}
-        />
+        <p className="text-gray-400 text-center mt-2 mb-6">
+          Regístrate para solicitar mandados y ver tus pedidos.
+        </p>
 
-        <input
-          className="w-full border p-2 mb-3"
-          type="text"
-          name="phone"
-          placeholder="Teléfono"
-          onChange={handleChange}
-        />
+        {message && (
+  <div
+    className={`mb-4 p-3 rounded-lg text-center font-medium border ${
+      message.toLowerCase().includes("correctamente")
+        ? "bg-green-600/10 border-green-500 text-green-400"
+        : "bg-red-600/10 border-red-500 text-red-400"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
-        <input
-          className="w-full border p-2 mb-3"
-          type="email"
-          name="email"
-          placeholder="Correo"
-          onChange={handleChange}
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="text"
+            name="name"
+            placeholder="Nombre completo"
+            value={form.name}
+            onChange={handleChange}
+          />
 
-        <input
-          className="w-full border p-2 mb-3"
-          type="password"
-          name="password"
-          placeholder="Contraseña"
-          onChange={handleChange}
-        />
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="text"
+            name="phone"
+            placeholder="Teléfono"
+            value={form.phone}
+            onChange={handleChange}
+          />
 
-        <button
-          className="bg-red-600 text-white px-4 py-2 rounded w-full"
-          type="submit"
-        >
-          Registrarme
-        </button>
-      </form>
-    </div>
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="email"
+            name="email"
+            placeholder="Correo electrónico"
+            value={form.email}
+            onChange={handleChange}
+          />
+
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="password"
+            name="password"
+            placeholder="Contraseña"
+            value={form.password}
+            onChange={handleChange}
+          />
+
+          <button
+            className="w-full bg-red-600 hover:bg-red-700 transition rounded-lg p-3 font-bold"
+            type="submit"
+          >
+            Registrarme
+          </button>
+        </form>
+
+        <p className="text-center text-gray-400 mt-6">
+          ¿Ya tienes cuenta?{" "}
+          <Link to="/login" className="text-red-500 hover:underline">
+            Inicia sesión
+          </Link>
+        </p>
+      </section>
+    </main>
   );
 }

@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { loginUser } from "../services/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [message, setMessage] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -15,43 +18,63 @@ export default function Login() {
 
     if (result.token) {
       localStorage.setItem("token", result.token);
+      localStorage.setItem("customer", JSON.stringify(result.customer));
 
-      alert("Inicio de sesión correcto");
+      setMessage("Inicio de sesión correcto");
     } else {
-      alert(result.message);
+      setMessage(result.message);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">
-        Iniciar Sesión
-      </h2>
+    <main className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-4">
+      <section className="w-full max-w-md bg-[#151515] border border-red-600/30 rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-red-600 text-center">
+          Iniciar sesión
+        </h1>
 
-      <form onSubmit={handleLogin}>
-        <input
-          className="w-full border p-2 mb-3"
-          type="email"
-          placeholder="Correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <p className="text-gray-400 text-center mt-2 mb-6">
+          Entra a tu cuenta para solicitar y revisar tus pedidos.
+        </p>
 
-        <input
-          className="w-full border p-2 mb-3"
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {message && (
+          <div className="mb-4 bg-red-600/10 border border-red-600 text-red-400 p-3 rounded-lg text-center">
+            {message}
+          </div>
+        )}
 
-        <button
-          className="bg-black text-white px-4 py-2 rounded w-full"
-          type="submit"
-        >
-          Entrar
-        </button>
-      </form>
-    </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <input
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button
+            className="w-full bg-red-600 hover:bg-red-700 transition rounded-lg p-3 font-bold"
+            type="submit"
+          >
+            Entrar
+          </button>
+        </form>
+
+        <p className="text-center text-gray-400 mt-6">
+          ¿No tienes cuenta?{" "}
+          <Link to="/register" className="text-red-500 hover:underline">
+            Regístrate
+          </Link>
+        </p>
+      </section>
+    </main>
   );
 }

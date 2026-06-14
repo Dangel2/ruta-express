@@ -9,6 +9,8 @@ export default function CreateOrder() {
     price: ""
   });
 
+  const [message, setMessage] = useState("");
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -24,25 +26,89 @@ export default function CreateOrder() {
       price: Number(form.price)
     });
 
-    alert(result.message);
+    if (result.order) {
+      setMessage("✅ Pedido creado correctamente.");
+
+      setForm({
+        origin: "",
+        destination: "",
+        description: "",
+        price: ""
+      });
+    } else {
+      setMessage(result.message || "❌ No se pudo crear el pedido.");
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">
-        Crear Pedido
-      </h2>
+    <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
+      <section className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-red-600">
+            Solicitar Mandado
+          </h1>
 
-      <form onSubmit={handleSubmit}>
-        <input className="w-full border p-2 mb-3" name="origin" placeholder="Origen" onChange={handleChange} />
-        <input className="w-full border p-2 mb-3" name="destination" placeholder="Destino" onChange={handleChange} />
-        <textarea className="w-full border p-2 mb-3" name="description" placeholder="Descripción del mandado" onChange={handleChange} />
-        <input className="w-full border p-2 mb-3" name="price" type="number" placeholder="Precio estimado" onChange={handleChange} />
+          <p className="text-gray-400 mt-3">
+            Completa los datos de tu pedido y Ruta Express se encargará del viaje.
+          </p>
+        </div>
 
-        <button className="bg-red-600 text-white px-4 py-2 rounded w-full" type="submit">
-          Enviar Pedido
-        </button>
-      </form>
-    </div>
+        <div className="bg-[#151515] border border-red-600/30 rounded-2xl shadow-xl p-8">
+          {message && (
+            <div
+              className={`mb-5 p-3 rounded-lg text-center font-medium border ${
+                message.includes("✅")
+                  ? "bg-green-600/10 border-green-500 text-green-400"
+                  : "bg-red-600/10 border-red-500 text-red-400"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            <input
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="origin"
+              placeholder="Origen del mandado"
+              value={form.origin}
+              onChange={handleChange}
+            />
+
+            <input
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="destination"
+              placeholder="Destino del mandado"
+              value={form.destination}
+              onChange={handleChange}
+            />
+
+            <textarea
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600 min-h-[120px]"
+              name="description"
+              placeholder="Describe qué necesitas: compra, retiro, entrega, pago o trámite"
+              value={form.description}
+              onChange={handleChange}
+            />
+
+            <input
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="price"
+              type="number"
+              placeholder="Precio estimado en C$"
+              value={form.price}
+              onChange={handleChange}
+            />
+
+            <button
+              className="w-full bg-red-600 hover:bg-red-700 transition rounded-lg p-3 font-bold mt-2"
+              type="submit"
+            >
+              Enviar Pedido
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
   );
 }
