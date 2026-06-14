@@ -1,8 +1,40 @@
 import { useState } from "react";
 import { createOrder } from "../services/api";
 
+const services = [
+  {
+    name: "Mandado local en Diriamba",
+    price: 50
+  },
+  {
+    name: "Diriamba a Jinotepe",
+    price: 100
+  },
+  {
+    name: "Diriamba a Dolores",
+    price: 80
+  },
+  {
+    name: "Diriamba a San Marcos",
+    price: 100
+  },
+  {
+    name: "Viaje a Managua",
+    price: 300
+  },
+  {
+    name: "Trámite sencillo",
+    price: 150
+  },
+  {
+    name: "Compra en supermercado o farmacia",
+    price: 100
+  }
+];
+
 export default function CreateOrder() {
   const [form, setForm] = useState({
+    serviceType: "",
     origin: "",
     destination: "",
     description: "",
@@ -10,6 +42,18 @@ export default function CreateOrder() {
   });
 
   const [message, setMessage] = useState("");
+
+  const handleServiceChange = (e) => {
+    const selectedService = services.find(
+      (service) => service.name === e.target.value
+    );
+
+    setForm({
+      ...form,
+      serviceType: selectedService?.name || "",
+      price: selectedService?.price || ""
+    });
+  };
 
   const handleChange = (e) => {
     setForm({
@@ -22,21 +66,24 @@ export default function CreateOrder() {
     e.preventDefault();
 
     const result = await createOrder({
-      ...form,
+      origin: form.origin,
+      destination: form.destination,
+      description: `Servicio: ${form.serviceType}. ${form.description}`,
       price: Number(form.price)
     });
 
     if (result.order) {
-      setMessage("✅ Pedido creado correctamente.");
+      setMessage("Pedido creado correctamente.");
 
       setForm({
+        serviceType: "",
         origin: "",
         destination: "",
         description: "",
         price: ""
       });
     } else {
-      setMessage(result.message || "❌ No se pudo crear el pedido.");
+      setMessage(result.message || "No se pudo crear el pedido.");
     }
   };
 
@@ -49,7 +96,7 @@ export default function CreateOrder() {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            Completa los datos de tu pedido y Ruta Express se encargará del viaje.
+            Selecciona el tipo de servicio y el precio se calculará automáticamente.
           </p>
         </div>
 
@@ -57,7 +104,7 @@ export default function CreateOrder() {
           {message && (
             <div
               className={`mb-5 p-3 rounded-lg text-center font-medium border ${
-                message.includes("✅")
+                message.includes("correctamente")
                   ? "bg-green-600/10 border-green-500 text-green-400"
                   : "bg-red-600/10 border-red-500 text-red-400"
               }`}
@@ -67,12 +114,31 @@ export default function CreateOrder() {
           )}
 
           <form onSubmit={handleSubmit} className="grid gap-4">
+            <select
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="serviceType"
+              value={form.serviceType}
+              onChange={handleServiceChange}
+              required
+            >
+              <option value="">
+                Selecciona el tipo de servicio
+              </option>
+
+              {services.map((service) => (
+                <option key={service.name} value={service.name}>
+                  {service.name} - C${service.price}
+                </option>
+              ))}
+            </select>
+
             <input
               className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
               name="origin"
               placeholder="Origen del mandado"
               value={form.origin}
               onChange={handleChange}
+              required
             />
 
             <input
@@ -81,6 +147,7 @@ export default function CreateOrder() {
               placeholder="Destino del mandado"
               value={form.destination}
               onChange={handleChange}
+              required
             />
 
             <textarea
@@ -91,14 +158,15 @@ export default function CreateOrder() {
               onChange={handleChange}
             />
 
-            <input
-              className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              name="price"
-              type="number"
-              placeholder="Precio estimado en C$"
-              value={form.price}
-              onChange={handleChange}
-            />
+            <div className="bg-black border border-green-600/40 rounded-lg p-4">
+              <p className="text-gray-400 text-sm">
+                Precio del servicio
+              </p>
+
+              <p className="text-2xl font-bold text-green-400">
+                {form.price ? `C$ ${form.price}` : "Selecciona un servicio"}
+              </p>
+            </div>
 
             <button
               className="w-full bg-red-600 hover:bg-red-700 transition rounded-lg p-3 font-bold mt-2"
