@@ -29,6 +29,47 @@ export default function MyOrders() {
     return "bg-yellow-600/10 text-yellow-400 border-yellow-500";
   };
 
+  const getStepState = (orderStatus, step) => {
+    const steps = ["Pendiente", "En camino", "Entregado"];
+
+    if (orderStatus === "Cancelado") {
+      return "cancelado";
+    }
+
+    const currentIndex = steps.indexOf(orderStatus);
+    const stepIndex = steps.indexOf(step);
+
+    if (stepIndex <= currentIndex) {
+      return "activo";
+    }
+
+    return "pendiente";
+  };
+
+  const getCircleClass = (state) => {
+    if (state === "cancelado") {
+      return "bg-red-600 border-red-500 text-white";
+    }
+
+    if (state === "activo") {
+      return "bg-green-600 border-green-500 text-white";
+    }
+
+    return "bg-black border-gray-600 text-gray-500";
+  };
+
+  const getLineClass = (state) => {
+    if (state === "cancelado") {
+      return "bg-red-600";
+    }
+
+    if (state === "activo") {
+      return "bg-green-600";
+    }
+
+    return "bg-gray-700";
+  };
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
       <section className="max-w-5xl mx-auto">
@@ -38,7 +79,7 @@ export default function MyOrders() {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            Revisa el historial y estado de tus mandados.
+            Revisa el historial y seguimiento de tus mandados.
           </p>
         </div>
 
@@ -50,67 +91,130 @@ export default function MyOrders() {
           </div>
         ) : (
           <div className="grid gap-5">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-[#151515] border border-gray-800 rounded-2xl p-6 shadow-lg"
-              >
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
-                  <h2 className="text-xl font-bold">
-                    Pedido #{order.id}
-                  </h2>
+            {orders.map((order) => {
+              const pendienteState = getStepState(order.status, "Pendiente");
+              const caminoState = getStepState(order.status, "En camino");
+              const entregadoState = getStepState(order.status, "Entregado");
 
-                  <span
-                    className={`border px-4 py-1 rounded-full text-sm font-bold ${getStatusClass(
-                      order.status
-                    )}`}
-                  >
-                    {order.status}
-                  </span>
+              return (
+                <div
+                  key={order.id}
+                  className="bg-[#151515] border border-gray-800 rounded-2xl p-6 shadow-lg"
+                >
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
+                    <h2 className="text-xl font-bold">
+                      Pedido #{order.id}
+                    </h2>
+
+                    <span
+                      className={`border px-4 py-1 rounded-full text-sm font-bold ${getStatusClass(
+                        order.status
+                      )}`}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="grid grid-cols-5 items-center">
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold ${getCircleClass(
+                            pendienteState
+                          )}`}
+                        >
+                          1
+                        </div>
+                        <p className="text-xs mt-2 text-gray-400">
+                          Pendiente
+                        </p>
+                      </div>
+
+                      <div
+                        className={`h-1 ${getLineClass(caminoState)}`}
+                      ></div>
+
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold ${getCircleClass(
+                            caminoState
+                          )}`}
+                        >
+                          2
+                        </div>
+                        <p className="text-xs mt-2 text-gray-400">
+                          En camino
+                        </p>
+                      </div>
+
+                      <div
+                        className={`h-1 ${getLineClass(entregadoState)}`}
+                      ></div>
+
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold ${getCircleClass(
+                            entregadoState
+                          )}`}
+                        >
+                          3
+                        </div>
+                        <p className="text-xs mt-2 text-gray-400">
+                          Entregado
+                        </p>
+                      </div>
+                    </div>
+
+                    {order.status === "Cancelado" && (
+                      <p className="text-red-400 text-center mt-4 font-semibold">
+                        Este pedido fue cancelado.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 text-gray-300">
+                    <div>
+                      <p className="text-gray-500 text-sm">
+                        Origen
+                      </p>
+                      <p>{order.origin}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-sm">
+                        Destino
+                      </p>
+                      <p>{order.destination}</p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <p className="text-gray-500 text-sm">
+                        Descripción
+                      </p>
+                      <p>{order.description}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-sm">
+                        Precio del servicio
+                      </p>
+                      <p className="font-bold text-green-400">
+                        C$ {order.price}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-sm">
+                        Fecha
+                      </p>
+                      <p>
+                        {new Date(order.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-4 text-gray-300">
-                  <div>
-                    <p className="text-gray-500 text-sm">
-                      Origen
-                    </p>
-                    <p>{order.origin}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500 text-sm">
-                      Destino
-                    </p>
-                    <p>{order.destination}</p>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <p className="text-gray-500 text-sm">
-                      Descripción
-                    </p>
-                    <p>{order.description}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500 text-sm">
-                      Precio
-                    </p>
-                    <p className="font-bold text-white">
-                      C${order.price}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-500 text-sm">
-                      Fecha
-                    </p>
-                    <p>
-                      {new Date(order.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
