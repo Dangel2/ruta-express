@@ -9,6 +9,7 @@ import ordersRoutes from "./routes/orders.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
 import promotionsRoutes from "./routes/promotions.routes.js";
+import servicesRoutes from "./routes/services.routes.js";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/promotions", promotionsRoutes);
+app.use("/api/services", servicesRoutes);
 
 await initDatabase();
 

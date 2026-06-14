@@ -6,7 +6,11 @@ import {
   updateOrderStatus,
   getAdminPromotions,
   createAdminPromotion,
-  toggleAdminPromotion
+  toggleAdminPromotion,
+  getAdminServices,
+  createAdminService,
+  toggleAdminService,
+  deleteAdminService
 } from "../services/api";
 
 export default function AdminDashboard() {
@@ -14,6 +18,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [promotions, setPromotions] = useState([]);
+  const [services, setServices] = useState([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -23,18 +28,26 @@ export default function AdminDashboard() {
     description: ""
   });
 
+  const [serviceForm, setServiceForm] = useState({
+    name: "",
+    price: ""
+  });
+
   const [promoMessage, setPromoMessage] = useState("");
+  const [serviceMessage, setServiceMessage] = useState("");
 
   async function loadData() {
     const statsData = await getDashboardStats();
     const ordersData = await getAllOrders();
     const customersData = await getAllCustomers();
     const promotionsData = await getAdminPromotions();
+    const servicesData = await getAdminServices();
 
     setStats(statsData);
     setOrders(ordersData.orders || []);
     setCustomers(customersData.customers || []);
     setPromotions(promotionsData.promotions || []);
+    setServices(servicesData.services || []);
   }
 
   useEffect(() => {
@@ -69,6 +82,43 @@ export default function AdminDashboard() {
 
   async function handleTogglePromotion(id) {
     await toggleAdminPromotion(id);
+    loadData();
+  }
+
+  function handleServiceChange(e) {
+    setServiceForm({
+      ...serviceForm,
+      [e.target.name]: e.target.value
+    });
+  }
+
+  async function handleCreateService(e) {
+    e.preventDefault();
+
+    const result = await createAdminService({
+      name: serviceForm.name,
+      price: Number(serviceForm.price)
+    });
+
+    if (result.service) {
+      setServiceMessage("Servicio creado correctamente.");
+      setServiceForm({ name: "", price: "" });
+      loadData();
+    } else {
+      setServiceMessage(result.message || "No se pudo crear el servicio.");
+    }
+  }
+
+  async function handleToggleService(id) {
+    await toggleAdminService(id);
+    loadData();
+  }
+
+  async function handleDeleteService(id) {
+    const confirmDelete = confirm("¿Seguro que deseas eliminar este servicio?");
+    if (!confirmDelete) return;
+
+    await deleteAdminService(id);
     loadData();
   }
 
@@ -108,79 +158,77 @@ export default function AdminDashboard() {
           Dashboard Administrador
         </h1>
 
-       <div className="grid md:grid-cols-5 gap-4 mb-6">
-  <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
-    <p className="text-gray-400">Pedidos</p>
-    <h2 className="text-3xl font-bold">
-      {stats.totalOrders}
-    </h2>
-  </div>
+        <div className="grid md:grid-cols-5 gap-4 mb-6">
+          <div className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+            <p className="text-gray-400">Pedidos</p>
+            <h2 className="text-3xl font-bold">{stats.totalOrders}</h2>
+          </div>
 
-  <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
-    <p className="text-gray-400">Pendientes</p>
-    <h2 className="text-3xl font-bold text-yellow-400">
-      {stats.pendingOrders}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
+            <p className="text-gray-400">Pendientes</p>
+            <h2 className="text-3xl font-bold text-yellow-400">
+              {stats.pendingOrders}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
-    <p className="text-gray-400">En camino</p>
-    <h2 className="text-3xl font-bold text-blue-400">
-      {stats.onWayOrders}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-blue-500 rounded-xl p-4">
+            <p className="text-gray-400">En camino</p>
+            <h2 className="text-3xl font-bold text-blue-400">
+              {stats.onWayOrders}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
-    <p className="text-gray-400">Entregados</p>
-    <h2 className="text-3xl font-bold text-green-400">
-      {stats.deliveredOrders}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
+            <p className="text-gray-400">Entregados</p>
+            <h2 className="text-3xl font-bold text-green-400">
+              {stats.deliveredOrders}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
-    <p className="text-gray-400">Clientes</p>
-    <h2 className="text-3xl font-bold text-red-500">
-      {stats.totalCustomers}
-    </h2>
-  </div>
-</div>
+          <div className="bg-[#151515] border border-red-600 rounded-xl p-4">
+            <p className="text-gray-400">Clientes</p>
+            <h2 className="text-3xl font-bold text-red-500">
+              {stats.totalCustomers}
+            </h2>
+          </div>
+        </div>
 
-<div className="grid md:grid-cols-5 gap-4 mb-10">
-  <div className="bg-[#151515] border border-green-600 rounded-xl p-4">
-    <p className="text-gray-400">Ingresos Totales</p>
-    <h2 className="text-2xl font-bold text-green-400">
-      C$ {stats.totalIncome}
-    </h2>
-  </div>
+        <div className="grid md:grid-cols-5 gap-4 mb-10">
+          <div className="bg-[#151515] border border-green-600 rounded-xl p-4">
+            <p className="text-gray-400">Ingresos Totales</p>
+            <h2 className="text-2xl font-bold text-green-400">
+              C$ {stats.totalIncome}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
-    <p className="text-gray-400">Ingresos Hoy</p>
-    <h2 className="text-2xl font-bold text-green-400">
-      C$ {stats.todayIncome}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-green-500 rounded-xl p-4">
+            <p className="text-gray-400">Ingresos Hoy</p>
+            <h2 className="text-2xl font-bold text-green-400">
+              C$ {stats.todayIncome}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
-    <p className="text-gray-400">Ingresos Mes</p>
-    <h2 className="text-2xl font-bold text-emerald-400">
-      C$ {stats.monthIncome}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-emerald-500 rounded-xl p-4">
+            <p className="text-gray-400">Ingresos Mes</p>
+            <h2 className="text-2xl font-bold text-emerald-400">
+              C$ {stats.monthIncome}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-cyan-500 rounded-xl p-4">
-    <p className="text-gray-400">Pedidos Hoy</p>
-    <h2 className="text-2xl font-bold text-cyan-400">
-      {stats.todayOrders}
-    </h2>
-  </div>
+          <div className="bg-[#151515] border border-cyan-500 rounded-xl p-4">
+            <p className="text-gray-400">Pedidos Hoy</p>
+            <h2 className="text-2xl font-bold text-cyan-400">
+              {stats.todayOrders}
+            </h2>
+          </div>
 
-  <div className="bg-[#151515] border border-purple-500 rounded-xl p-4">
-    <p className="text-gray-400">Pedidos Mes</p>
-    <h2 className="text-2xl font-bold text-purple-400">
-      {stats.monthOrders}
-    </h2>
-  </div>
-</div>
+          <div className="bg-[#151515] border border-purple-500 rounded-xl p-4">
+            <p className="text-gray-400">Pedidos Mes</p>
+            <h2 className="text-2xl font-bold text-purple-400">
+              {stats.monthOrders}
+            </h2>
+          </div>
+        </div>
 
         <h2 className="text-2xl font-bold mb-4">Gestión de Promociones</h2>
 
@@ -219,10 +267,7 @@ export default function AdminDashboard() {
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {promotions.map((promo) => (
-            <div
-              key={promo.id}
-              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
-            >
+            <div key={promo.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
               <div className="flex justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-red-500">{promo.title}</h3>
@@ -250,14 +295,92 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        <h2 className="text-2xl font-bold mb-4">
+          Gestión de Servicios y Precios
+        </h2>
+
+        <div className="bg-[#151515] border border-gray-800 rounded-xl p-5 mb-8">
+          {serviceMessage && (
+            <div className="mb-4 border border-red-600/40 bg-red-600/10 text-red-400 p-3 rounded-lg">
+              {serviceMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleCreateService} className="grid md:grid-cols-3 gap-4">
+            <input
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="name"
+              placeholder="Nombre del servicio"
+              value={serviceForm.name}
+              onChange={handleServiceChange}
+              required
+            />
+
+            <input
+              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+              name="price"
+              type="number"
+              placeholder="Precio C$"
+              value={serviceForm.price}
+              onChange={handleServiceChange}
+              required
+            />
+
+            <button
+              className="bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg font-bold"
+              type="submit"
+            >
+              Crear Servicio
+            </button>
+          </form>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
+          {services.map((service) => (
+            <div key={service.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
+              <div className="flex justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-red-500">{service.name}</h3>
+                  <p className="text-green-400 font-bold">
+                    C$ {service.price}
+                  </p>
+                </div>
+
+                <span
+                  className={`h-fit px-3 py-1 rounded-full text-sm border ${
+                    service.active
+                      ? "text-green-400 border-green-500 bg-green-600/10"
+                      : "text-red-400 border-red-500 bg-red-600/10"
+                  }`}
+                >
+                  {service.active ? "Activo" : "Inactivo"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => handleToggleService(service.id)}
+                  className="bg-black border border-gray-700 hover:border-red-600 px-4 py-2 rounded-lg"
+                >
+                  {service.active ? "Desactivar" : "Activar"}
+                </button>
+
+                <button
+                  onClick={() => handleDeleteService(service.id)}
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <h2 className="text-2xl font-bold mb-4">Clientes Registrados</h2>
 
         <div className="grid md:grid-cols-2 gap-4 mb-10">
           {customers.map((customer) => (
-            <div
-              key={customer.id}
-              className="bg-[#151515] border border-gray-800 rounded-xl p-4"
-            >
+            <div key={customer.id} className="bg-[#151515] border border-gray-800 rounded-xl p-4">
               <p className="font-bold text-red-500">{customer.name}</p>
               <p className="text-gray-300">{customer.email}</p>
               <p className="text-gray-400">{customer.phone}</p>
@@ -308,22 +431,20 @@ export default function AdminDashboard() {
             </div>
           ) : (
             filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-[#151515] border border-gray-800 rounded-xl p-5"
-              >
+              <div key={order.id} className="bg-[#151515] border border-gray-800 rounded-xl p-5">
                 <p className="font-bold text-xl">Pedido #{order.id}</p>
 
-                <p className="text-gray-300">
-                  Cliente: {order.customer_name}
-                </p>
-
-                <p className="text-gray-300">
-                  Teléfono: {order.customer_phone}
-                </p>
-
+                <p className="text-gray-300">Cliente: {order.customer_name}</p>
+                <p className="text-gray-300">Teléfono: {order.customer_phone}</p>
                 <p className="text-gray-300">Origen: {order.origin}</p>
                 <p className="text-gray-300">Destino: {order.destination}</p>
+
+                <p className="text-gray-300">
+                  Precio del servicio:{" "}
+                  <span className="font-bold text-green-400">
+                    C$ {order.price}
+                  </span>
+                </p>
 
                 <p className="text-gray-300">
                   Estado actual:{" "}
@@ -333,31 +454,19 @@ export default function AdminDashboard() {
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-4">
-                  <button
-                    onClick={() => changeStatus(order.id, "Pendiente")}
-                    className="bg-yellow-600 px-3 py-2 rounded"
-                  >
+                  <button onClick={() => changeStatus(order.id, "Pendiente")} className="bg-yellow-600 px-3 py-2 rounded">
                     Pendiente
                   </button>
 
-                  <button
-                    onClick={() => changeStatus(order.id, "En camino")}
-                    className="bg-blue-600 px-3 py-2 rounded"
-                  >
+                  <button onClick={() => changeStatus(order.id, "En camino")} className="bg-blue-600 px-3 py-2 rounded">
                     En camino
                   </button>
 
-                  <button
-                    onClick={() => changeStatus(order.id, "Entregado")}
-                    className="bg-green-600 px-3 py-2 rounded"
-                  >
+                  <button onClick={() => changeStatus(order.id, "Entregado")} className="bg-green-600 px-3 py-2 rounded">
                     Entregado
                   </button>
 
-                  <button
-                    onClick={() => changeStatus(order.id, "Cancelado")}
-                    className="bg-red-600 px-3 py-2 rounded"
-                  >
+                  <button onClick={() => changeStatus(order.id, "Cancelado")} className="bg-red-600 px-3 py-2 rounded">
                     Cancelado
                   </button>
                 </div>

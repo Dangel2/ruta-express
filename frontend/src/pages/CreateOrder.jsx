@@ -1,39 +1,11 @@
-import { useState } from "react";
-import { createOrder } from "../services/api";
-
-const services = [
-  {
-    name: "Mandado local en Diriamba",
-    price: 50
-  },
-  {
-    name: "Diriamba a Jinotepe",
-    price: 100
-  },
-  {
-    name: "Diriamba a Dolores",
-    price: 80
-  },
-  {
-    name: "Diriamba a San Marcos",
-    price: 100
-  },
-  {
-    name: "Viaje a Managua",
-    price: 300
-  },
-  {
-    name: "Trámite sencillo",
-    price: 150
-  },
-  {
-    name: "Compra en supermercado o farmacia",
-    price: 100
-  }
-];
+import { useEffect, useState } from "react";
+import { createOrder, getPublicServices } from "../services/api";
 
 export default function CreateOrder() {
+  const [services, setServices] = useState([]);
+
   const [form, setForm] = useState({
+    serviceId: "",
     serviceType: "",
     origin: "",
     destination: "",
@@ -43,13 +15,23 @@ export default function CreateOrder() {
 
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    async function loadServices() {
+      const result = await getPublicServices();
+      setServices(result.services || []);
+    }
+
+    loadServices();
+  }, []);
+
   const handleServiceChange = (e) => {
     const selectedService = services.find(
-      (service) => service.name === e.target.value
+      (service) => String(service.id) === e.target.value
     );
 
     setForm({
       ...form,
+      serviceId: selectedService?.id || "",
       serviceType: selectedService?.name || "",
       price: selectedService?.price || ""
     });
@@ -76,6 +58,7 @@ export default function CreateOrder() {
       setMessage("Pedido creado correctamente.");
 
       setForm({
+        serviceId: "",
         serviceType: "",
         origin: "",
         destination: "",
@@ -96,7 +79,7 @@ export default function CreateOrder() {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            Selecciona el tipo de servicio y el precio se calculará automáticamente.
+            Selecciona el tipo de servicio y el precio se cargará automáticamente.
           </p>
         </div>
 
@@ -116,8 +99,8 @@ export default function CreateOrder() {
           <form onSubmit={handleSubmit} className="grid gap-4">
             <select
               className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              name="serviceType"
-              value={form.serviceType}
+              name="serviceId"
+              value={form.serviceId}
               onChange={handleServiceChange}
               required
             >
@@ -126,8 +109,8 @@ export default function CreateOrder() {
               </option>
 
               {services.map((service) => (
-                <option key={service.name} value={service.name}>
-                  {service.name} - C${service.price}
+                <option key={service.id} value={service.id}>
+                  {service.name} - C$ {service.price}
                 </option>
               ))}
             </select>
