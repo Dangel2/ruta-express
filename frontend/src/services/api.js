@@ -129,3 +129,30 @@ export async function getAllCustomers() {
 
   return response.json();
 }
+
+export async function getMyProfile() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/customers/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
+
+export async function updateMyProfile(profileData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/customers/me`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(profileData)
+  });
+
+  return response.json();
+}

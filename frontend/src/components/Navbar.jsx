@@ -26,6 +26,10 @@ export default function Navbar() {
           <Link to="/my-orders">
             Mis Pedidos
           </Link>
+		  
+		  <Link to="/profile">
+           Perfil
+          </Link>
 
           <Link to="/admin">
             Admin
