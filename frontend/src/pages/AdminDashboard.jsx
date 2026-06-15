@@ -14,7 +14,9 @@ import {
   toggleAdminService,
   deleteAdminService,
   deleteAdminPromotion,
-  deleteAdminOrder
+  deleteAdminOrder,
+  getUnreadNotificationsCount,
+  markNotificationsViewed
 } from "../services/api";
 
 export default function AdminDashboard() {
@@ -45,6 +47,7 @@ export default function AdminDashboard() {
   const [newOrderAlert, setNewOrderAlert] = useState(null);
   const [lastOrderId, setLastOrderId] = useState(null);
   const [toastOrder, setToastOrder] = useState(null);
+  const [newOrdersCount, setNewOrdersCount] = useState(0);
 
   function formatDate(date) {
     return new Date(date).toLocaleString("es-NI", {
@@ -112,12 +115,18 @@ export default function AdminDashboard() {
     const customersData = await getAllCustomers();
     const promotionsData = await getAdminPromotions();
     const servicesData = await getAdminServices();
+	const notificationsData =
+  await getUnreadNotificationsCount();
 
     setStats(statsData);
     setOrders(ordersData.orders || []);
     setCustomers(customersData.customers || []);
     setPromotions(promotionsData.promotions || []);
     setServices(servicesData.services || []);
+	
+	setNewOrdersCount(
+  notificationsData.count || 0
+);
   }
 
   useEffect(() => {
@@ -142,6 +151,7 @@ export default function AdminDashboard() {
           );
 
           setToastOrder(newestOrder);
+         
 
           const audio = new Audio("/notification.mp3");
           audio.play().catch(() => {
@@ -167,6 +177,11 @@ export default function AdminDashboard() {
 
   return () => clearInterval(interval);
 }, [lastOrderId]);
+
+async function handleMarkNotificationsRead() {
+  await markNotificationsViewed();
+  setNewOrdersCount(0);
+}
 
   async function changeStatus(id, status) {
     await updateOrderStatus(id, status);
@@ -456,6 +471,22 @@ export default function AdminDashboard() {
         <h1 className="text-4xl font-bold text-red-600 mb-8">
           Dashboard Administrador
         </h1>
+
+        <div className="mb-6 bg-[#151515] border border-red-600 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-gray-400 text-sm">Alertas del dashboard</p>
+            <h2 className="text-2xl font-bold text-red-500">
+              🔔 Pedidos nuevos: {newOrdersCount}
+            </h2>
+          </div>
+
+          <button
+            onClick={handleMarkNotificationsRead}
+            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
+          >
+            Marcar como vistos
+          </button>
+        </div>
 
         <div className="flex flex-wrap gap-3 mb-8">
           <button

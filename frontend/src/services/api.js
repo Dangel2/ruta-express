@@ -339,3 +339,38 @@ export async function deleteAdminService(id) {
 
   return response.json();
 }
+
+/* ===========================
+   ADMIN NOTIFICATIONS
+=========================== */
+
+export async function getUnreadNotificationsCount() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/admin/notifications/count`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.json();
+}
+
+export async function markNotificationsViewed() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/admin/notifications/mark-viewed`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.json();
+}

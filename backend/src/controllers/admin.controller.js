@@ -279,3 +279,41 @@ export async function getDashboardStats(req, res) {
     });
   }
 }
+
+export async function getUnreadNotificationsCount(req, res) {
+  try {
+    const result = await pool.query(`
+      SELECT COUNT(*) AS count
+      FROM admin_notifications
+      WHERE viewed = false
+    `);
+
+    return res.json({
+      count: Number(result.rows[0].count)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error obteniendo notificaciones",
+      error: error.message
+    });
+  }
+}
+
+export async function markNotificationsViewed(req, res) {
+  try {
+    await pool.query(`
+      UPDATE admin_notifications
+      SET viewed = true
+      WHERE viewed = false
+    `);
+
+    return res.json({
+      message: "Notificaciones marcadas como vistas"
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error actualizando notificaciones",
+      error: error.message
+    });
+  }
+}

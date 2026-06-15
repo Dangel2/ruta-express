@@ -78,6 +78,15 @@ export async function createOrder(req, res) {
       ]
     );
 
+await pool.query(
+  `INSERT INTO admin_notifications (
+    order_id,
+    viewed
+  )
+  VALUES ($1, false)`,
+  [result.rows[0].id]
+);
+
     sendNewOrderWhatsApp(result.rows[0]);
 
     return res.status(201).json({

@@ -5,7 +5,9 @@ import {
   updateAdminOrderStatus,
   getAllCustomers,
   getDashboardStats,
-  deleteAdminOrder
+  deleteAdminOrder,
+  getUnreadNotificationsCount,
+  markNotificationsViewed
 } from "../controllers/admin.controller.js";
 
 import { authMiddleware } from "../middleware/auth.middleware.js";
@@ -57,6 +59,20 @@ router.get(
   authMiddleware,
   adminOnly,
   getDashboardStats
+);
+
+router.get(
+  "/notifications/count",
+  authMiddleware,
+  adminOnly,
+  getUnreadNotificationsCount
+);
+
+router.post(
+  "/notifications/mark-viewed",
+  authMiddleware,
+  adminOnly,
+  markNotificationsViewed
 );
 
 export default router;
