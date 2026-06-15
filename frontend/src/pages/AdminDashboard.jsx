@@ -67,13 +67,40 @@ export default function AdminDashboard() {
     });
   }
 
+  function getPointAForMap(order) {
+    if (order.origin_lat && order.origin_lng) {
+      return `${order.origin_lat},${order.origin_lng}`;
+    }
+
+    return order.origin_address || order.origin || "";
+  }
+
+  function getPointBForMap(order) {
+    if (order.destination_lat && order.destination_lng) {
+      return `${order.destination_lat},${order.destination_lng}`;
+    }
+
+    return order.destination_address || order.destination || "";
+  }
+
   function getGoogleMapsUrl(order) {
-    const origin = order.origin_address || order.origin || "";
-    const destination = order.destination_address || order.destination || "";
+    const pointA = getPointAForMap(order);
+    const pointB = getPointBForMap(order);
 
     return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
-      origin
-    )}&destination=${encodeURIComponent(destination)}`;
+      pointA
+    )}&destination=${encodeURIComponent(pointB)}&travelmode=driving`;
+  }
+
+  function getFullDeliveryRouteUrl(order) {
+    const pointA = getPointAForMap(order);
+    const pointB = getPointBForMap(order);
+
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
+      "My Location"
+    )}&destination=${encodeURIComponent(
+      pointB
+    )}&waypoints=${encodeURIComponent(pointA)}&travelmode=driving`;
   }
 
   async function loadData() {
@@ -312,7 +339,8 @@ export default function AdminDashboard() {
       Precio: order.price,
       Estado: order.status,
       Fecha: formatDate(order.created_at),
-      Ruta: getGoogleMapsUrl(order)
+      "Ruta Punto A a Punto B": getGoogleMapsUrl(order),
+      "Ruta completa repartidor": getFullDeliveryRouteUrl(order)
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -856,6 +884,15 @@ export default function AdminDashboard() {
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
                   >
                     Ver Ruta Punto A → Punto B
+                  </a>
+
+                  <a
+                    href={getFullDeliveryRouteUrl(order)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-bold"
+                  >
+                    Ruta completa: Mi ubicación → Punto A → Punto B
                   </a>
 
                   <button
