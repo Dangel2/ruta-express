@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cancelOrder, getMyOrders } from "../services/api";
 
 export default function MyOrders() {
@@ -7,32 +7,72 @@ export default function MyOrders() {
   const [message, setMessage] = useState("");
   const [cancelingId, setCancelingId] = useState(null);
   const [confirmCancelOrder, setConfirmCancelOrder] = useState(null);
+  const [statusAlert, setStatusAlert] = useState(null);
 
-  async function loadOrders() {
+  const previousOrdersRef = useRef([]);
+  const firstLoadRef = useRef(true);
+
+  async function loadOrders(showLoading = true) {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
 
       const result = await getMyOrders();
 
       if (result.orders) {
-        setOrders(result.orders);
+        const newOrders = result.orders;
+        const previousOrders = previousOrdersRef.current;
+
+        if (!firstLoadRef.current) {
+          const changedOrder = newOrders.find((newOrder) => {
+            const previousOrder = previousOrders.find(
+              (order) => order.id === newOrder.id
+            );
+
+            return previousOrder && previousOrder.status !== newOrder.status;
+          });
+
+          if (changedOrder) {
+            setStatusAlert({
+              id: changedOrder.id,
+              status: changedOrder.status,
+              ...getStatusNotification(changedOrder.status)
+            });
+
+            setTimeout(() => {
+              setStatusAlert(null);
+            }, 7000);
+          }
+        }
+
+        previousOrdersRef.current = newOrders;
+        firstLoadRef.current = false;
+
+        setOrders(newOrders);
         setMessage("");
       } else {
         setOrders([]);
-        setMessage(
-          result.message || "No se pudieron cargar los pedidos."
-        );
+        setMessage(result.message || "No se pudieron cargar los pedidos.");
       }
     } catch (error) {
       console.error("Error cargando pedidos:", error);
       setMessage("Ocurrió un error al cargar los pedidos.");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
-    loadOrders();
+    loadOrders(true);
+
+    const interval = setInterval(() => {
+      loadOrders(false);
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   function getStatusClass(status) {
@@ -49,6 +89,43 @@ export default function MyOrders() {
     }
 
     return "bg-yellow-600/10 text-yellow-400 border-yellow-500";
+  }
+
+  function getStatusNotification(status) {
+    switch (status) {
+      case "Pendiente":
+        return {
+          title: "📦 Pedido pendiente",
+          message:
+            "Tu pedido fue recibido correctamente y está esperando ser atendido."
+        };
+
+      case "En camino":
+        return {
+          title: "🚚 Pedido en camino",
+          message: "El repartidor ya se encuentra realizando tu servicio."
+        };
+
+      case "Entregado":
+        return {
+          title: "✅ Pedido entregado",
+          message:
+            "Tu pedido fue completado correctamente. Gracias por usar Ruta Express."
+        };
+
+      case "Cancelado":
+        return {
+          title: "❌ Pedido cancelado",
+          message: "Este pedido fue cancelado y ya no se encuentra activo."
+        };
+
+      default:
+        return {
+          title: "📦 Estado del pedido",
+          message:
+            "Tu pedido se está actualizando. Revisa el seguimiento para más detalles."
+        };
+    }
   }
 
   function getStepState(orderStatus, step) {
@@ -121,18 +198,12 @@ export default function MyOrders() {
   }
 
   function getOriginText(order) {
-    return (
-      order.origin_address ||
-      order.origin ||
-      "Punto A no registrado"
-    );
+    return order.origin_address || order.origin || "Punto A no registrado";
   }
 
   function getDestinationText(order) {
     return (
-      order.destination_address ||
-      order.destination ||
-      "Punto B no registrado"
+      order.destination_address || order.destination || "Punto B no registrado"
     );
   }
 
@@ -219,17 +290,17 @@ export default function MyOrders() {
 
       if (result.order) {
         setOrders((previousOrders) =>
-          previousOrders.map((order) =>
-            order.id === result.order.id ? result.order : order
-          )
+          previousOrders.filter((order) => order.id !== result.order.id)
+        );
+
+        previousOrdersRef.current = previousOrdersRef.current.filter(
+          (order) => order.id !== result.order.id
         );
 
         setMessage("Pedido cancelado correctamente.");
         setConfirmCancelOrder(null);
       } else {
-        setMessage(
-          result.message || "No se pudo cancelar el pedido."
-        );
+        setMessage(result.message || "No se pudo cancelar el pedido.");
       }
     } catch (error) {
       console.error("Error cancelando pedido:", error);
@@ -244,9 +315,7 @@ export default function MyOrders() {
       <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
         <section className="max-w-5xl mx-auto">
           <div className="bg-[#151515] border border-gray-800 rounded-2xl p-8 text-center">
-            <p className="text-gray-400">
-              Cargando tus pedidos...
-            </p>
+            <p className="text-gray-400">Cargando tus pedidos...</p>
           </div>
         </section>
       </main>
@@ -255,15 +324,43 @@ export default function MyOrders() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
+      {statusAlert && (
+        <div className="fixed top-5 right-5 z-50 w-[92%] max-w-sm">
+          <div
+            className={`border rounded-2xl p-4 shadow-2xl backdrop-blur bg-[#151515]/95 ${getStatusClass(
+              statusAlert.status
+            )}`}
+          >
+            <div className="flex justify-between gap-4">
+              <div>
+                <p className="font-bold text-lg">{statusAlert.title}</p>
+                <p className="text-sm mt-1">
+                  Pedido #{statusAlert.id}: {statusAlert.message}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setStatusAlert(null)}
+                className="text-white/70 hover:text-white font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-red-600">
-            Mis Pedidos
-          </h1>
+          <h1 className="text-4xl font-bold text-red-600">Mis Pedidos</h1>
 
           <p className="text-gray-400 mt-3">
-            Revisa el historial, la tarifa y el seguimiento de tus
-            mandados.
+            Revisa el historial, la tarifa y el seguimiento de tus mandados.
+          </p>
+
+          <p className="text-gray-500 text-sm mt-2">
+            Esta página se actualiza automáticamente cada pocos segundos.
           </p>
         </div>
 
@@ -288,20 +385,9 @@ export default function MyOrders() {
         ) : (
           <div className="grid gap-5">
             {orders.map((order) => {
-              const pendienteState = getStepState(
-                order.status,
-                "Pendiente"
-              );
-
-              const caminoState = getStepState(
-                order.status,
-                "En camino"
-              );
-
-              const entregadoState = getStepState(
-                order.status,
-                "Entregado"
-              );
+              const pendienteState = getStepState(order.status, "Pendiente");
+              const caminoState = getStepState(order.status, "En camino");
+              const entregadoState = getStepState(order.status, "Entregado");
 
               const priceType = order.price_type || "fixed";
               const isDistancePrice = priceType === "distance";
@@ -312,9 +398,7 @@ export default function MyOrders() {
                   className="bg-[#151515] border border-gray-800 rounded-2xl p-5 md:p-6 shadow-lg"
                 >
                   <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
-                    <h2 className="text-xl font-bold">
-                      Pedido #{order.id}
-                    </h2>
+                    <h2 className="text-xl font-bold">Pedido #{order.id}</h2>
 
                     <span
                       className={`border px-4 py-1 rounded-full text-sm font-bold ${getStatusClass(
@@ -323,6 +407,20 @@ export default function MyOrders() {
                     >
                       {order.status}
                     </span>
+                  </div>
+
+                  <div
+                    className={`mb-6 border rounded-xl p-4 ${getStatusClass(
+                      order.status
+                    )}`}
+                  >
+                    <h3 className="font-bold text-lg">
+                      {getStatusNotification(order.status).title}
+                    </h3>
+
+                    <p className="mt-1 text-sm md:text-base">
+                      {getStatusNotification(order.status).message}
+                    </p>
                   </div>
 
                   <div className="mb-7">
@@ -341,11 +439,7 @@ export default function MyOrders() {
                         </p>
                       </div>
 
-                      <div
-                        className={`h-1 ${getLineClass(
-                          caminoState
-                        )}`}
-                      />
+                      <div className={`h-1 ${getLineClass(caminoState)}`} />
 
                       <div className="flex flex-col items-center">
                         <div
@@ -361,11 +455,7 @@ export default function MyOrders() {
                         </p>
                       </div>
 
-                      <div
-                        className={`h-1 ${getLineClass(
-                          entregadoState
-                        )}`}
-                      />
+                      <div className={`h-1 ${getLineClass(entregadoState)}`} />
 
                       <div className="flex flex-col items-center">
                         <div
@@ -415,13 +505,10 @@ export default function MyOrders() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <p className="text-gray-500 text-sm">
-                        Descripción
-                      </p>
+                      <p className="text-gray-500 text-sm">Descripción</p>
 
                       <p>
-                        {order.description ||
-                          "Sin descripción adicional"}
+                        {order.description || "Sin descripción adicional"}
                       </p>
                     </div>
 
@@ -462,9 +549,7 @@ export default function MyOrders() {
                     </div>
 
                     <div>
-                      <p className="text-gray-500 text-sm">
-                        Fecha
-                      </p>
+                      <p className="text-gray-500 text-sm">Fecha</p>
 
                       <p>{formatDate(order.created_at)}</p>
                     </div>
@@ -518,8 +603,8 @@ export default function MyOrders() {
               </p>
 
               <p className="text-gray-500 text-sm mb-6">
-                Pedido #{confirmCancelOrder.id}. Solo se pueden cancelar
-                pedidos que todavía están en estado Pendiente.
+                Pedido #{confirmCancelOrder.id}. Solo se pueden cancelar pedidos
+                que todavía están en estado Pendiente.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -538,9 +623,7 @@ export default function MyOrders() {
                   disabled={Boolean(cancelingId)}
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed transition px-4 py-3 rounded-lg font-bold"
                 >
-                  {cancelingId
-                    ? "Cancelando..."
-                    : "Sí, cancelar"}
+                  {cancelingId ? "Cancelando..." : "Sí, cancelar"}
                 </button>
               </div>
             </div>
