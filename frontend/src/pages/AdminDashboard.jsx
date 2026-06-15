@@ -42,6 +42,9 @@ export default function AdminDashboard() {
 
   const [promoMessage, setPromoMessage] = useState("");
   const [serviceMessage, setServiceMessage] = useState("");
+  const [newOrderAlert, setNewOrderAlert] = useState(null);
+  const [lastOrderId, setLastOrderId] = useState(null);
+  const [toastOrder, setToastOrder] = useState(null);
 
   function formatDate(date) {
     return new Date(date).toLocaleString("es-NI", {
@@ -118,8 +121,52 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    loadData();
-  }, []);
+  loadData();
+
+  const interval = setInterval(async () => {
+    try {
+      const ordersData = await getAllOrders();
+      const latestOrders = ordersData.orders || [];
+
+      if (latestOrders.length > 0) {
+        const newestOrder = latestOrders[0];
+
+        if (
+          lastOrderId !== null &&
+          newestOrder.id !== lastOrderId
+        ) {
+          setNewOrderAlert(
+            `🔔 Nuevo pedido #${newestOrder.id} de ${
+              newestOrder.customer_name || "Cliente"
+            }`
+          );
+
+          setToastOrder(newestOrder);
+
+          const audio = new Audio("/notification.mp3");
+          audio.play().catch(() => {
+            console.log(
+              "El navegador bloqueó el sonido hasta que el usuario interactúe."
+            );
+          });
+
+          setTimeout(() => {
+            setNewOrderAlert(null);
+            setToastOrder(null);
+          }, 10000);
+        }
+
+        setLastOrderId(newestOrder.id);
+      }
+
+      setOrders(latestOrders);
+    } catch (error) {
+      console.error(error);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [lastOrderId]);
 
   async function changeStatus(id, status) {
     await updateOrderStatus(id, status);
@@ -370,7 +417,42 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-10">
+      {toastOrder && (
+        <div className="fixed top-5 right-5 z-50 w-[340px] max-w-[90vw] bg-[#151515] border border-green-500 shadow-2xl rounded-2xl p-4 animate-pulse">
+          <p className="text-green-400 font-bold text-lg">
+            🔔 Nuevo pedido recibido
+          </p>
+
+          <p className="text-white font-bold mt-1">
+            Pedido #{toastOrder.id}
+          </p>
+
+          <p className="text-gray-300 text-sm mt-1">
+            Cliente: {toastOrder.customer_name || "No disponible"}
+          </p>
+
+          <p className="text-gray-300 text-sm">
+            Punto A: {toastOrder.origin_address || toastOrder.origin || "No disponible"}
+          </p>
+
+          <p className="text-gray-300 text-sm">
+            Punto B: {toastOrder.destination_address || toastOrder.destination || "No disponible"}
+          </p>
+
+          <p className="text-green-400 font-bold mt-2">
+            C$ {Number(toastOrder.price || 0).toFixed(2)}
+          </p>
+        </div>
+      )}
+
       <section className="max-w-6xl mx-auto">
+	  
+	  {newOrderAlert && (
+  <div className="mb-6 bg-green-600 text-white p-4 rounded-xl text-center font-bold text-lg animate-pulse">
+    {newOrderAlert}
+  </div>
+)}
+	  
         <h1 className="text-4xl font-bold text-red-600 mb-8">
           Dashboard Administrador
         </h1>
@@ -883,7 +965,7 @@ export default function AdminDashboard() {
                     rel="noopener noreferrer"
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
                   >
-                    Ver Ruta Punto A → Punto B
+                    Ver Ruta Punto A �?Punto B
                   </a>
 
                   <a
@@ -892,7 +974,7 @@ export default function AdminDashboard() {
                     rel="noopener noreferrer"
                     className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-bold"
                   >
-                    Ruta completa: Mi ubicación → Punto A → Punto B
+                    Ruta completa: Mi ubicación �?Punto A �?Punto B
                   </a>
 
                   <button
