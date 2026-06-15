@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { sendNewOrderWhatsApp } from "../services/whatsappService.js";
 
 export async function createOrder(req, res) {
   try {
@@ -76,6 +77,8 @@ export async function createOrder(req, res) {
         distance_km || 0
       ]
     );
+
+    sendNewOrderWhatsApp(result.rows[0]);
 
     return res.status(201).json({
       message: "Pedido creado correctamente",
