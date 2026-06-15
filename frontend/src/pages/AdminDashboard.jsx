@@ -13,7 +13,8 @@ import {
   createAdminService,
   toggleAdminService,
   deleteAdminService,
-  deleteAdminPromotion
+  deleteAdminPromotion,
+  deleteAdminOrder
 } from "../services/api";
 
 export default function AdminDashboard() {
@@ -34,7 +35,9 @@ export default function AdminDashboard() {
 
   const [serviceForm, setServiceForm] = useState({
     name: "",
-    price: ""
+    price: "",
+    price_type: "fixed",
+    price_per_km: ""
   });
 
   const [promoMessage, setPromoMessage] = useState("");
@@ -96,6 +99,22 @@ export default function AdminDashboard() {
     loadData();
   }
 
+  async function handleDeleteOrder(id) {
+    const confirmDelete = window.confirm(
+      "¿Deseas eliminar este pedido?\n\nEsta acción no se puede deshacer."
+    );
+
+    if (!confirmDelete) return;
+
+    const result = await deleteAdminOrder(id);
+
+    if (result.order) {
+      loadData();
+    } else {
+      alert(result.message || "No se pudo eliminar el pedido.");
+    }
+  }
+
   function handlePromoChange(e) {
     setPromoForm({
       ...promoForm,
@@ -131,26 +150,77 @@ export default function AdminDashboard() {
   }
 
   function handleServiceChange(e) {
-    setServiceForm({
-      ...serviceForm,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    if (name === "price_type") {
+      setServiceForm((previousForm) => ({
+        ...previousForm,
+        price_type: value,
+        price_per_km:
+          value === "fixed" ? "" : previousForm.price_per_km
+      }));
+
+      return;
+    }
+
+    setServiceForm((previousForm) => ({
+      ...previousForm,
+      [name]: value
+    }));
   }
 
   async function handleCreateService(e) {
     e.preventDefault();
 
+    if (!serviceForm.name.trim()) {
+      setServiceMessage("El nombre del servicio es obligatorio.");
+      return;
+    }
+
+    if (
+      serviceForm.price === "" ||
+      Number(serviceForm.price) < 0
+    ) {
+      setServiceMessage("Ingresa un precio válido.");
+      return;
+    }
+
+    if (
+      serviceForm.price_type === "distance" &&
+      (serviceForm.price_per_km === "" ||
+        Number(serviceForm.price_per_km) <= 0)
+    ) {
+      setServiceMessage(
+        "Ingresa un precio por kilómetro mayor que cero."
+      );
+      return;
+    }
+
     const result = await createAdminService({
-      name: serviceForm.name,
-      price: Number(serviceForm.price)
+      name: serviceForm.name.trim(),
+      price: Number(serviceForm.price),
+      price_type: serviceForm.price_type,
+      price_per_km:
+        serviceForm.price_type === "distance"
+          ? Number(serviceForm.price_per_km)
+          : 0
     });
 
     if (result.service) {
       setServiceMessage("Servicio creado correctamente.");
-      setServiceForm({ name: "", price: "" });
+
+      setServiceForm({
+        name: "",
+        price: "",
+        price_type: "fixed",
+        price_per_km: ""
+      });
+
       loadData();
     } else {
-      setServiceMessage(result.message || "No se pudo crear el servicio.");
+      setServiceMessage(
+        result.message || "No se pudo crear el servicio."
+      );
     }
   }
 
@@ -229,6 +299,16 @@ export default function AdminDashboard() {
       Telefono: order.customer_phone,
       "Punto A": order.origin_address || order.origin,
       "Punto B": order.destination_address || order.destination,
+      "Tipo de tarifa":
+        order.price_type === "distance"
+          ? "Por distancia"
+          : order.price_type === "manual"
+            ? "Manual"
+            : "Fija",
+      "Distancia km":
+        order.price_type === "distance"
+          ? Number(order.distance_km || 0)
+          : 0,
       Precio: order.price,
       Estado: order.status,
       Fecha: formatDate(order.created_at),
@@ -449,29 +529,111 @@ export default function AdminDashboard() {
 
           <form
             onSubmit={handleCreateService}
-            className="grid md:grid-cols-3 gap-4"
+            className="grid md:grid-cols-2 gap-4"
           >
-            <input
-              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              name="name"
-              placeholder="Nombre del servicio"
-              value={serviceForm.name}
-              onChange={handleServiceChange}
-              required
-            />
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                Nombre del servicio
+              </label>
 
-            <input
-              className="bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-              name="price"
-              type="number"
-              placeholder="Precio C$"
-              value={serviceForm.price}
-              onChange={handleServiceChange}
-              required
-            />
+              <input
+                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+                name="name"
+                placeholder="Ejemplo: Viaje fuera de cobertura"
+                value={serviceForm.name}
+                onChange={handleServiceChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                Tipo de tarifa
+              </label>
+
+              <select
+                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+                name="price_type"
+                value={serviceForm.price_type}
+                onChange={handleServiceChange}
+              >
+                <option value="fixed">Tarifa fija</option>
+                <option value="distance">Tarifa por distancia</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                {serviceForm.price_type === "distance"
+                  ? "Tarifa mínima C$"
+                  : "Precio fijo C$"}
+              </label>
+
+              <input
+                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+                name="price"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder={
+                  serviceForm.price_type === "distance"
+                    ? "Ejemplo: 80"
+                    : "Ejemplo: 300"
+                }
+                value={serviceForm.price}
+                onChange={handleServiceChange}
+                required
+              />
+            </div>
+
+            {serviceForm.price_type === "distance" && (
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Precio por kilómetro C$
+                </label>
+
+                <input
+                  className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-blue-600"
+                  name="price_per_km"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Ejemplo: 10"
+                  value={serviceForm.price_per_km}
+                  onChange={handleServiceChange}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="md:col-span-2 bg-black border border-gray-800 rounded-lg p-4">
+              {serviceForm.price_type === "distance" ? (
+                <div className="text-sm text-gray-300">
+                  <p className="font-bold text-blue-400">
+                    Servicio con tarifa por distancia
+                  </p>
+
+                  <p className="mt-1">
+                    Se cobrará el precio por kilómetro y nunca menos
+                    que la tarifa mínima.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-300">
+                  <p className="font-bold text-green-400">
+                    Servicio con tarifa fija
+                  </p>
+
+                  <p className="mt-1">
+                    El cliente verá únicamente el precio fijo que
+                    configures.
+                  </p>
+                </div>
+              )}
+            </div>
 
             <button
-              className="bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg font-bold"
+              className="md:col-span-2 bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg font-bold"
               type="submit"
             >
               Crear Servicio
@@ -487,8 +649,38 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-red-500">{service.name}</h3>
-                  <p className="text-green-400 font-bold">C$ {service.price}</p>
+                  <h3 className="font-bold text-red-500">
+                    {service.name}
+                  </h3>
+
+                  {service.price_type === "distance" ? (
+                    <div className="mt-2">
+                      <span className="inline-block border border-blue-500 bg-blue-600/10 text-blue-400 px-3 py-1 rounded-full text-xs font-bold">
+                        Tarifa por distancia
+                      </span>
+
+                      <p className="text-green-400 font-bold mt-2">
+                        Tarifa mínima: C${" "}
+                        {Number(service.price || 0).toFixed(2)}
+                      </p>
+
+                      <p className="text-blue-400 font-bold">
+                        C${" "}
+                        {Number(service.price_per_km || 0).toFixed(2)}{" "}
+                        por km
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <span className="inline-block border border-green-500 bg-green-600/10 text-green-400 px-3 py-1 rounded-full text-xs font-bold">
+                        Tarifa fija
+                      </span>
+
+                      <p className="text-green-400 font-bold mt-2">
+                        C$ {Number(service.price || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <span
@@ -615,9 +807,37 @@ export default function AdminDashboard() {
                 </p>
 
                 <p className="text-gray-300">
+                  Tipo de tarifa:{" "}
+                  <span
+                    className={`font-bold ${
+                      order.price_type === "distance"
+                        ? "text-blue-400"
+                        : order.price_type === "manual"
+                          ? "text-purple-400"
+                          : "text-green-400"
+                    }`}
+                  >
+                    {order.price_type === "distance"
+                      ? "Por distancia"
+                      : order.price_type === "manual"
+                        ? "Manual"
+                        : "Fija"}
+                  </span>
+                </p>
+
+                {order.price_type === "distance" && (
+                  <p className="text-gray-300">
+                    Distancia estimada:{" "}
+                    <span className="font-bold text-blue-400">
+                      {Number(order.distance_km || 0).toFixed(2)} km
+                    </span>
+                  </p>
+                )}
+
+                <p className="text-gray-300">
                   Precio del servicio:{" "}
                   <span className="font-bold text-green-400">
-                    C$ {order.price}
+                    C$ {Number(order.price || 0).toFixed(2)}
                   </span>
                 </p>
 
@@ -664,6 +884,13 @@ export default function AdminDashboard() {
                     className="bg-red-600 px-3 py-2 rounded"
                   >
                     Cancelado
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteOrder(order.id)}
+                    className="bg-red-900 hover:bg-red-800 px-3 py-2 rounded font-bold"
+                  >
+                    Eliminar Pedido
                   </button>
                 </div>
 

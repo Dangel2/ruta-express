@@ -96,6 +96,7 @@ export async function getMyOrders(req, res) {
     const result = await pool.query(
       `SELECT * FROM orders
        WHERE customer_id = $1
+       AND status != 'Cancelado'
        ORDER BY created_at DESC`,
       [customerId]
     );
@@ -118,7 +119,8 @@ export async function getOrderById(req, res) {
 
     const result = await pool.query(
       `SELECT * FROM orders
-       WHERE id = $1 AND customer_id = $2`,
+       WHERE id = $1
+       AND customer_id = $2`,
       [id, customerId]
     );
 
@@ -134,6 +136,54 @@ export async function getOrderById(req, res) {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo pedido",
+      error: error.message
+    });
+  }
+}
+
+export async function cancelMyOrder(req, res) {
+  try {
+    const customerId = req.user.id;
+    const { id } = req.params;
+
+    const orderResult = await pool.query(
+      `SELECT *
+       FROM orders
+       WHERE id = $1
+       AND customer_id = $2`,
+      [id, customerId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Pedido no encontrado"
+      });
+    }
+
+    const order = orderResult.rows[0];
+
+    if (order.status !== "Pendiente") {
+      return res.status(400).json({
+        message:
+          "Solo se pueden cancelar pedidos pendientes"
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE orders
+       SET status = 'Cancelado'
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    return res.json({
+      message: "Pedido cancelado correctamente",
+      order: result.rows[0]
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error cancelando pedido",
       error: error.message
     });
   }

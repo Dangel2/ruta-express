@@ -60,6 +60,19 @@ export async function getMyOrders() {
   return response.json();
 }
 
+export async function cancelOrder(id) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/orders/${id}/cancel`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}
+
 /* ===========================
    ADMIN
 =========================== */
@@ -118,6 +131,22 @@ export async function updateOrderStatus(id, status) {
   return response.json();
 }
 
+export async function deleteAdminOrder(id) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/admin/orders/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.json();
+}
+
 export async function getAllCustomers() {
   const token = localStorage.getItem("adminToken");
 
@@ -129,6 +158,10 @@ export async function getAllCustomers() {
 
   return response.json();
 }
+
+/* ===========================
+   PROFILE
+=========================== */
 
 export async function getMyProfile() {
   const token = localStorage.getItem("token");
@@ -157,6 +190,10 @@ export async function updateMyProfile(profileData) {
   return response.json();
 }
 
+/* ===========================
+   PROMOTIONS
+=========================== */
+
 export async function getPublicPromotions() {
   const response = await fetch(`${API_URL}/promotions`);
 
@@ -166,11 +203,14 @@ export async function getPublicPromotions() {
 export async function getAdminPromotions() {
   const token = localStorage.getItem("adminToken");
 
-  const response = await fetch(`${API_URL}/promotions/admin/all`, {
-    headers: {
-      Authorization: `Bearer ${token}`
+  const response = await fetch(
+    `${API_URL}/promotions/admin/all`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
+  );
 
   return response.json();
 }
@@ -178,14 +218,17 @@ export async function getAdminPromotions() {
 export async function createAdminPromotion(promotionData) {
   const token = localStorage.getItem("adminToken");
 
-  const response = await fetch(`${API_URL}/promotions/admin`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(promotionData)
-  });
+  const response = await fetch(
+    `${API_URL}/promotions/admin`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(promotionData)
+    }
+  );
 
   return response.json();
 }
@@ -193,70 +236,15 @@ export async function createAdminPromotion(promotionData) {
 export async function toggleAdminPromotion(id) {
   const token = localStorage.getItem("adminToken");
 
-  const response = await fetch(`${API_URL}/promotions/admin/${id}/toggle`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`
+  const response = await fetch(
+    `${API_URL}/promotions/admin/${id}/toggle`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
-
-  return response.json();
-}
-
-export async function getPublicServices() {
-  const response = await fetch(`${API_URL}/services`);
-  return response.json();
-}
-
-export async function getAdminServices() {
-  const token = localStorage.getItem("adminToken");
-
-  const response = await fetch(`${API_URL}/services/admin/all`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  return response.json();
-}
-
-export async function createAdminService(serviceData) {
-  const token = localStorage.getItem("adminToken");
-
-  const response = await fetch(`${API_URL}/services/admin`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(serviceData)
-  });
-
-  return response.json();
-}
-
-export async function toggleAdminService(id) {
-  const token = localStorage.getItem("adminToken");
-
-  const response = await fetch(`${API_URL}/services/admin/${id}/toggle`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  return response.json();
-}
-
-export async function deleteAdminService(id) {
-  const token = localStorage.getItem("adminToken");
-
-  const response = await fetch(`${API_URL}/services/admin/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+  );
 
   return response.json();
 }
@@ -264,12 +252,90 @@ export async function deleteAdminService(id) {
 export async function deleteAdminPromotion(id) {
   const token = localStorage.getItem("adminToken");
 
-  const response = await fetch(`${API_URL}/promotions/admin/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
+  const response = await fetch(
+    `${API_URL}/promotions/admin/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
+  );
+
+  return response.json();
+}
+
+/* ===========================
+   SERVICES
+=========================== */
+
+export async function getPublicServices() {
+  const response = await fetch(`${API_URL}/services`);
+
+  return response.json();
+}
+
+export async function getAdminServices() {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/services/admin/all`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.json();
+}
+
+export async function createAdminService(serviceData) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/services/admin`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(serviceData)
+    }
+  );
+
+  return response.json();
+}
+
+export async function toggleAdminService(id) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/services/admin/${id}/toggle`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.json();
+}
+
+export async function deleteAdminService(id) {
+  const token = localStorage.getItem("adminToken");
+
+  const response = await fetch(
+    `${API_URL}/services/admin/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
 
   return response.json();
 }

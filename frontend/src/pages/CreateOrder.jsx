@@ -1,63 +1,88 @@
 import { useEffect, useState } from "react";
 import { createOrder, getPublicServices } from "../services/api";
 
-/*
-  Puedes modificar este valor más adelante.
-  Actualmente la tarifa por distancia es de C$10 por kilómetro.
-*/
-const PRICE_PER_KM = 10;
+const initialForm = {
+  serviceId: "",
+  serviceType: "",
+
+  origin: "",
+  destination: "",
+  description: "",
+
+  basePrice: "",
+  price: "",
+
+  price_type: "fixed",
+  price_per_km: "",
+  distance_km: "",
+
+  origin_lat: "",
+  origin_lng: "",
+  destination_lat: "",
+  destination_lng: ""
+};
 
 export default function CreateOrder() {
   const [services, setServices] = useState([]);
+  const [form, setForm] = useState(initialForm);
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [originLocationSelected, setOriginLocationSelected] = useState(false);
-
-  const initialForm = {
-    serviceId: "",
-    serviceType: "",
-    origin: "",
-    destination: "",
-    description: "",
-
-    basePrice: "",
-    price: "",
-
-    price_type: "fixed",
-    distance_km: "",
-
-    origin_lat: "",
-    origin_lng: "",
-    destination_lat: "",
-    destination_lng: ""
-  };
-
-  const [form, setForm] = useState(initialForm);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [originLocationSelected, setOriginLocationSelected] =
+    useState(false);
 
   useEffect(() => {
     async function loadServices() {
       try {
+        setServicesLoading(true);
+
         const result = await getPublicServices();
-        setServices(result.services || []);
+
+        if (result.services) {
+          setServices(result.services);
+          setMessage("");
+        } else {
+          setServices([]);
+          setMessage(
+            result.message || "No se pudieron cargar los servicios."
+          );
+        }
       } catch (error) {
         console.error("Error cargando servicios:", error);
         setMessage("No se pudieron cargar los servicios.");
+      } finally {
+        setServicesLoading(false);
       }
     }
 
     loadServices();
   }, []);
 
-  function calculateDistancePrice(distance, basePrice) {
-    const kilometers = Number(distance) || 0;
-    const minimumPrice = Number(basePrice) || 0;
-    const calculatedPrice = kilometers * PRICE_PER_KM;
+  function normalizePriceType(priceType) {
+    return priceType === "distance" ? "distance" : "fixed";
+  }
 
-    /*
-      El precio por distancia nunca será menor
-      que el precio fijo del servicio seleccionado.
-    */
-    return Math.max(calculatedPrice, minimumPrice);
+  function calculateDistanceSubtotal(distance, pricePerKm) {
+    const kilometers = Number(distance) || 0;
+    const ratePerKm = Number(pricePerKm) || 0;
+
+    return kilometers * ratePerKm;
+  }
+
+  function calculateFinalDistancePrice(
+    distance,
+    basePrice,
+    pricePerKm
+  ) {
+    const minimumPrice = Number(basePrice) || 0;
+
+    const distanceSubtotal = calculateDistanceSubtotal(
+      distance,
+      pricePerKm
+    );
+
+    return Math.max(distanceSubtotal, minimumPrice);
   }
 
   function handleServiceChange(e) {
@@ -71,28 +96,52 @@ export default function CreateOrder() {
         serviceId: "",
         serviceType: "",
         basePrice: "",
-        price: ""
+        price: "",
+        price_type: "fixed",
+        price_per_km: "",
+        distance_km: ""
       }));
 
       return;
     }
 
-    const servicePrice = Number(selectedService.price) || 0;
+    const servicePriceType = normalizePriceType(
+      selectedService.price_type
+    );
+
+    const serviceBasePrice =
+      Number(selectedService.price) || 0;
+
+    const servicePricePerKm =
+      Number(selectedService.price_per_km) || 0;
 
     setForm((previousForm) => ({
       ...previousForm,
+
       serviceId: selectedService.id,
       serviceType: selectedService.name,
-      basePrice: servicePrice,
 
-      price:
-        previousForm.price_type === "distance"
-          ? calculateDistancePrice(
-              previousForm.distance_km,
-              servicePrice
-            )
-          : servicePrice
+      basePrice: serviceBasePrice,
+      price: serviceBasePrice,
+
+      price_type: servicePriceType,
+      price_per_km: servicePricePerKm,
+      distance_km: ""
     }));
+
+    if (servicePriceType === "fixed") {
+      setMessage(
+        `Este servicio utiliza una tarifa fija de C$ ${serviceBasePrice.toFixed(
+          2
+        )}.`
+      );
+    } else {
+      setMessage(
+        `Este servicio utiliza tarifa por distancia: C$ ${servicePricePerKm.toFixed(
+          2
+        )} por kilómetro.`
+      );
+    }
   }
 
   function handleChange(e) {
@@ -111,32 +160,21 @@ export default function CreateOrder() {
       return;
     }
 
+    if (name === "destination") {
+      setForm((previousForm) => ({
+        ...previousForm,
+        destination: value,
+        destination_lat: "",
+        destination_lng: ""
+      }));
+
+      return;
+    }
+
     setForm((previousForm) => ({
       ...previousForm,
       [name]: value
     }));
-  }
-
-  function handlePriceTypeChange(e) {
-    const selectedPriceType = e.target.value;
-
-    setForm((previousForm) => {
-      const updatedPrice =
-        selectedPriceType === "distance"
-          ? calculateDistancePrice(
-              previousForm.distance_km,
-              previousForm.basePrice
-            )
-          : Number(previousForm.basePrice) || 0;
-
-      return {
-        ...previousForm,
-        price_type: selectedPriceType,
-        price: updatedPrice
-      };
-    });
-
-    setMessage("");
   }
 
   function handleDistanceChange(e) {
@@ -148,17 +186,23 @@ export default function CreateOrder() {
 
     setForm((previousForm) => ({
       ...previousForm,
+
       distance_km: distance,
-      price: calculateDistancePrice(
+
+      price: calculateFinalDistancePrice(
         distance,
-        previousForm.basePrice
+        previousForm.basePrice,
+        previousForm.price_per_km
       )
     }));
   }
 
   function getCurrentLocation() {
     if (!navigator.geolocation) {
-      setMessage("Tu navegador no permite obtener la ubicación.");
+      setMessage(
+        "Tu navegador no permite obtener la ubicación."
+      );
+
       return;
     }
 
@@ -177,7 +221,10 @@ export default function CreateOrder() {
         }));
 
         setOriginLocationSelected(true);
-        setMessage("Ubicación actual seleccionada correctamente.");
+
+        setMessage(
+          "Ubicación actual seleccionada correctamente."
+        );
       },
       (error) => {
         console.error("Error obteniendo ubicación:", error);
@@ -186,11 +233,15 @@ export default function CreateOrder() {
           setMessage(
             "Debes permitir el acceso a la ubicación desde el navegador."
           );
+
           return;
         }
 
         if (error.code === error.POSITION_UNAVAILABLE) {
-          setMessage("Tu ubicación no está disponible actualmente.");
+          setMessage(
+            "Tu ubicación no está disponible actualmente."
+          );
+
           return;
         }
 
@@ -198,10 +249,13 @@ export default function CreateOrder() {
           setMessage(
             "La ubicación tardó demasiado. Intenta nuevamente."
           );
+
           return;
         }
 
-        setMessage("No se pudo obtener tu ubicación actual.");
+        setMessage(
+          "No se pudo obtener tu ubicación actual."
+        );
       },
       {
         enableHighAccuracy: true,
@@ -227,12 +281,43 @@ export default function CreateOrder() {
     return form.destination;
   }
 
+  const originForMap = getOriginForMap();
+  const destinationForMap = getDestinationForMap();
+
   const previewMapUrl =
-    getOriginForMap() && getDestinationForMap()
+    originForMap && destinationForMap
       ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
-          getOriginForMap()
-        )}&destination=${encodeURIComponent(getDestinationForMap())}`
+          originForMap
+        )}&destination=${encodeURIComponent(
+          destinationForMap
+        )}`
       : "";
+
+  const hasSelectedService = Boolean(form.serviceId);
+
+  const isDistanceService =
+    form.price_type === "distance";
+
+  const distanceSubtotal =
+    calculateDistanceSubtotal(
+      form.distance_km,
+      form.price_per_km
+    );
+
+  const minimumPrice = Number(form.basePrice) || 0;
+
+  const finalPrice = isDistanceService
+    ? calculateFinalDistancePrice(
+        form.distance_km,
+        form.basePrice,
+        form.price_per_km
+      )
+    : minimumPrice;
+
+  const isMinimumPriceApplied =
+    isDistanceService &&
+    Number(form.distance_km) > 0 &&
+    distanceSubtotal < minimumPrice;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -243,27 +328,35 @@ export default function CreateOrder() {
     }
 
     if (!form.origin || !form.destination) {
-      setMessage("El Punto A y el Punto B son obligatorios.");
+      setMessage(
+        "El Punto A y el Punto B son obligatorios."
+      );
+
       return;
     }
 
     if (
-      form.price_type === "distance" &&
-      (!form.distance_km || Number(form.distance_km) <= 0)
+      isDistanceService &&
+      Number(form.price_per_km) <= 0
+    ) {
+      setMessage(
+        "Este servicio no tiene configurado correctamente el precio por kilómetro."
+      );
+
+      return;
+    }
+
+    if (
+      isDistanceService &&
+      (!form.distance_km ||
+        Number(form.distance_km) <= 0)
     ) {
       setMessage(
         "Ingresa la distancia estimada en kilómetros."
       );
+
       return;
     }
-
-    const finalPrice =
-      form.price_type === "distance"
-        ? calculateDistancePrice(
-            form.distance_km,
-            form.basePrice
-          )
-        : Number(form.basePrice) || 0;
 
     try {
       setLoading(true);
@@ -274,7 +367,8 @@ export default function CreateOrder() {
         destination: form.destination,
 
         description: `Servicio: ${form.serviceType}. ${
-          form.description || "Sin descripción adicional."
+          form.description ||
+          "Sin descripción adicional."
         }`,
 
         price: finalPrice,
@@ -285,14 +379,17 @@ export default function CreateOrder() {
         origin_lat: form.origin_lat || null,
         origin_lng: form.origin_lng || null,
 
-        destination_lat: form.destination_lat || null,
-        destination_lng: form.destination_lng || null,
+        destination_lat:
+          form.destination_lat || null,
+
+        destination_lng:
+          form.destination_lng || null,
 
         price_type: form.price_type,
-        distance_km:
-          form.price_type === "distance"
-            ? Number(form.distance_km)
-            : 0
+
+        distance_km: isDistanceService
+          ? Number(form.distance_km)
+          : 0
       });
 
       if (result.order) {
@@ -301,18 +398,35 @@ export default function CreateOrder() {
         setOriginLocationSelected(false);
       } else {
         setMessage(
-          result.message || "No se pudo crear el pedido."
+          result.message ||
+            "No se pudo crear el pedido."
         );
       }
     } catch (error) {
       console.error("Error creando pedido:", error);
-      setMessage("Ocurrió un error al crear el pedido.");
+
+      setMessage(
+        "Ocurrió un error al crear el pedido."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  const hasSelectedService = Boolean(form.serviceId);
+  function getMessageClass() {
+    if (message.includes("correctamente")) {
+      return "bg-green-600/10 border-green-500 text-green-400";
+    }
+
+    if (
+      message.includes("Obteniendo") ||
+      message.includes("utiliza")
+    ) {
+      return "bg-blue-600/10 border-blue-500 text-blue-400";
+    }
+
+    return "bg-red-600/10 border-red-500 text-red-400";
+  }
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
@@ -323,27 +437,24 @@ export default function CreateOrder() {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            Selecciona el servicio, los puntos de la ruta y el
-            tipo de tarifa.
+            Selecciona un servicio y el tipo de tarifa se
+            aplicará automáticamente.
           </p>
         </div>
 
         <div className="bg-[#151515] border border-red-600/30 rounded-2xl shadow-xl p-6 md:p-8">
           {message && (
             <div
-              className={`mb-5 p-3 rounded-lg text-center font-medium border ${
-                message.includes("correctamente")
-                  ? "bg-green-600/10 border-green-500 text-green-400"
-                  : message.includes("Obteniendo")
-                    ? "bg-blue-600/10 border-blue-500 text-blue-400"
-                    : "bg-red-600/10 border-red-500 text-red-400"
-              }`}
+              className={`mb-5 p-3 rounded-lg text-center font-medium border ${getMessageClass()}`}
             >
               {message}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="grid gap-5">
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-5"
+          >
             <div>
               <label
                 htmlFor="serviceId"
@@ -354,57 +465,106 @@ export default function CreateOrder() {
 
               <select
                 id="serviceId"
-                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
+                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600 disabled:opacity-60"
                 name="serviceId"
                 value={form.serviceId}
                 onChange={handleServiceChange}
+                disabled={servicesLoading}
                 required
               >
                 <option value="">
-                  Selecciona el tipo de servicio
+                  {servicesLoading
+                    ? "Cargando servicios..."
+                    : "Selecciona el tipo de servicio"}
                 </option>
 
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} - C$ {service.price}
-                  </option>
-                ))}
+                {services.map((service) => {
+                  const servicePriceType =
+                    normalizePriceType(
+                      service.price_type
+                    );
+
+                  const servicePrice =
+                    Number(service.price) || 0;
+
+                  const servicePricePerKm =
+                    Number(service.price_per_km) || 0;
+
+                  return (
+                    <option
+                      key={service.id}
+                      value={service.id}
+                    >
+                      {servicePriceType === "distance"
+                        ? `${service.name} - Desde C$ ${servicePrice.toFixed(
+                            2
+                          )} / C$ ${servicePricePerKm.toFixed(
+                            2
+                          )} por km`
+                        : `${service.name} - C$ ${servicePrice.toFixed(
+                            2
+                          )}`}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="price_type"
-                className="block text-sm font-semibold text-gray-300 mb-2"
+            {hasSelectedService && (
+              <div
+                className={`border rounded-xl p-4 ${
+                  isDistanceService
+                    ? "bg-blue-600/10 border-blue-500"
+                    : "bg-green-600/10 border-green-500"
+                }`}
               >
-                Tipo de tarifa
-              </label>
-
-              <select
-                id="price_type"
-                className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
-                name="price_type"
-                value={form.price_type}
-                onChange={handlePriceTypeChange}
-                disabled={!hasSelectedService}
-              >
-                <option value="fixed">
-                  Tarifa fija del servicio
-                </option>
-
-                <option value="distance">
-                  Calcular tarifa por distancia
-                </option>
-              </select>
-
-              {!hasSelectedService && (
-                <p className="text-gray-500 text-sm mt-2">
-                  Primero selecciona un servicio.
+                <p className="text-gray-400 text-sm">
+                  Tipo de tarifa asignada
                 </p>
-              )}
-            </div>
 
-            {form.price_type === "distance" && (
+                <p
+                  className={`font-bold text-lg ${
+                    isDistanceService
+                      ? "text-blue-400"
+                      : "text-green-400"
+                  }`}
+                >
+                  {isDistanceService
+                    ? "Tarifa automática por distancia"
+                    : "Tarifa fija del servicio"}
+                </p>
+
+                {isDistanceService ? (
+                  <div className="mt-2 text-sm text-gray-300">
+                    <p>
+                      Tarifa mínima:{" "}
+                      <span className="font-bold text-green-400">
+                        C$ {minimumPrice.toFixed(2)}
+                      </span>
+                    </p>
+
+                    <p>
+                      Precio por kilómetro:{" "}
+                      <span className="font-bold text-blue-400">
+                        C${" "}
+                        {Number(
+                          form.price_per_km || 0
+                        ).toFixed(2)}
+                      </span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-300 mt-2">
+                    Precio fijo:{" "}
+                    <span className="font-bold text-green-400">
+                      C$ {minimumPrice.toFixed(2)}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {isDistanceService && (
               <div className="bg-black border border-blue-600/40 rounded-xl p-4">
                 <label
                   htmlFor="distance_km"
@@ -420,27 +580,48 @@ export default function CreateOrder() {
                   type="number"
                   min="0.1"
                   step="0.1"
-                  placeholder="Ejemplo: 12.5"
+                  placeholder="Ejemplo: 20"
                   value={form.distance_km}
                   onChange={handleDistanceChange}
                   required
                 />
 
-                <div className="mt-3 text-sm text-gray-400">
-                  <p>
-                    Tarifa por kilómetro:{" "}
-                    <span className="font-bold text-blue-400">
-                      C$ {PRICE_PER_KM}
-                    </span>
-                  </p>
+                {Number(form.distance_km) > 0 && (
+                  <div className="mt-4 border border-gray-700 rounded-lg p-4">
+                    <p className="text-gray-400 text-sm mb-1">
+                      Cálculo de la tarifa
+                    </p>
 
-                  <p>
-                    Tarifa mínima del servicio:{" "}
-                    <span className="font-bold text-green-400">
-                      C$ {Number(form.basePrice) || 0}
-                    </span>
-                  </p>
-                </div>
+                    <p className="text-xl font-bold text-white">
+                      {Number(
+                        form.distance_km
+                      ).toFixed(2)}{" "}
+                      km × C${" "}
+                      {Number(
+                        form.price_per_km
+                      ).toFixed(2)}{" "}
+                      ={" "}
+                      <span className="text-blue-400">
+                        C${" "}
+                        {distanceSubtotal.toFixed(2)}
+                      </span>
+                    </p>
+
+                    {isMinimumPriceApplied && (
+                      <p className="mt-3 text-yellow-400 text-sm">
+                        El cálculo por distancia es menor
+                        que la tarifa mínima. Se aplicará la
+                        tarifa mínima de C${" "}
+                        {minimumPrice.toFixed(2)}.
+                      </p>
+                    )}
+
+                    <p className="mt-3 text-green-400 font-bold text-lg">
+                      Precio final: C${" "}
+                      {finalPrice.toFixed(2)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -453,8 +634,8 @@ export default function CreateOrder() {
               </label>
 
               <p className="text-gray-500 text-sm mb-2">
-                Lugar donde se realizará la compra, retiro, pago o
-                mandado.
+                Lugar donde se realizará la compra, retiro,
+                pago o mandado.
               </p>
 
               <input
@@ -496,8 +677,8 @@ export default function CreateOrder() {
               </label>
 
               <p className="text-gray-500 text-sm mb-2">
-                Lugar donde se entregará el pedido o terminará el
-                servicio.
+                Lugar donde se entregará el pedido o
+                terminará el servicio.
               </p>
 
               <input
@@ -546,36 +727,57 @@ export default function CreateOrder() {
               </p>
 
               <p className="font-bold text-white mb-3">
-                {form.price_type === "distance"
-                  ? "Tarifa calculada por distancia"
-                  : "Tarifa fija del servicio"}
+                {!hasSelectedService
+                  ? "Selecciona un servicio"
+                  : isDistanceService
+                    ? "Tarifa calculada por distancia"
+                    : "Tarifa fija del servicio"}
               </p>
 
               <p className="text-gray-400 text-sm">
-                Precio estimado
+                Precio final estimado
               </p>
 
               <p className="text-3xl font-bold text-green-400">
                 {hasSelectedService
-                  ? `C$ ${Number(form.price || 0).toFixed(2)}`
+                  ? `C$ ${finalPrice.toFixed(2)}`
                   : "Selecciona un servicio"}
               </p>
 
-              {form.price_type === "distance" &&
+              {isDistanceService &&
                 Number(form.distance_km) > 0 && (
-                  <p className="text-gray-500 text-sm mt-2">
-                    {form.distance_km} km × C$ {PRICE_PER_KM} por
-                    kilómetro
-                  </p>
+                  <div className="mt-3 text-sm text-gray-400">
+                    <p>
+                      Cálculo:{" "}
+                      {Number(
+                        form.distance_km
+                      ).toFixed(2)}{" "}
+                      km × C${" "}
+                      {Number(
+                        form.price_per_km
+                      ).toFixed(2)}{" "}
+                      = C${" "}
+                      {distanceSubtotal.toFixed(2)}
+                    </p>
+
+                    {isMinimumPriceApplied && (
+                      <p className="text-yellow-400 mt-1">
+                        Se aplicó la tarifa mínima del
+                        servicio.
+                      </p>
+                    )}
+                  </div>
                 )}
             </div>
 
             <button
               className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed transition rounded-lg p-3 font-bold mt-2"
               type="submit"
-              disabled={loading}
+              disabled={loading || servicesLoading}
             >
-              {loading ? "Enviando pedido..." : "Enviar Pedido"}
+              {loading
+                ? "Enviando pedido..."
+                : "Enviar Pedido"}
             </button>
           </form>
         </div>

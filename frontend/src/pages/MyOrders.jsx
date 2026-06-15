@@ -1,35 +1,37 @@
 import { useEffect, useState } from "react";
-import { getMyOrders } from "../services/api";
+import { cancelOrder, getMyOrders } from "../services/api";
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [cancelingId, setCancelingId] = useState(null);
+  const [confirmCancelOrder, setConfirmCancelOrder] = useState(null);
+
+  async function loadOrders() {
+    try {
+      setLoading(true);
+
+      const result = await getMyOrders();
+
+      if (result.orders) {
+        setOrders(result.orders);
+        setMessage("");
+      } else {
+        setOrders([]);
+        setMessage(
+          result.message || "No se pudieron cargar los pedidos."
+        );
+      }
+    } catch (error) {
+      console.error("Error cargando pedidos:", error);
+      setMessage("Ocurrió un error al cargar los pedidos.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadOrders() {
-      try {
-        setLoading(true);
-
-        const result = await getMyOrders();
-
-        if (result.orders) {
-          setOrders(result.orders);
-          setMessage("");
-        } else {
-          setOrders([]);
-          setMessage(
-            result.message || "No se pudieron cargar los pedidos."
-          );
-        }
-      } catch (error) {
-        console.error("Error cargando pedidos:", error);
-        setMessage("Ocurrió un error al cargar los pedidos.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadOrders();
   }, []);
 
@@ -197,6 +199,46 @@ export default function MyOrders() {
     return `${value.toFixed(2)} km`;
   }
 
+  function openCancelConfirmation(order) {
+    setConfirmCancelOrder(order);
+  }
+
+  function closeCancelConfirmation() {
+    if (cancelingId) return;
+    setConfirmCancelOrder(null);
+  }
+
+  async function handleConfirmCancelOrder() {
+    if (!confirmCancelOrder) return;
+
+    try {
+      setCancelingId(confirmCancelOrder.id);
+      setMessage("");
+
+      const result = await cancelOrder(confirmCancelOrder.id);
+
+      if (result.order) {
+        setOrders((previousOrders) =>
+          previousOrders.map((order) =>
+            order.id === result.order.id ? result.order : order
+          )
+        );
+
+        setMessage("Pedido cancelado correctamente.");
+        setConfirmCancelOrder(null);
+      } else {
+        setMessage(
+          result.message || "No se pudo cancelar el pedido."
+        );
+      }
+    } catch (error) {
+      console.error("Error cancelando pedido:", error);
+      setMessage("Ocurrió un error al cancelar el pedido.");
+    } finally {
+      setCancelingId(null);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0A0A0A] text-white px-4 py-12">
@@ -226,7 +268,13 @@ export default function MyOrders() {
         </div>
 
         {message && (
-          <div className="mb-6 bg-red-600/10 border border-red-500 text-red-400 rounded-xl p-4 text-center">
+          <div
+            className={`mb-6 rounded-xl p-4 text-center border ${
+              message.includes("correctamente")
+                ? "bg-green-600/10 border-green-500 text-green-400"
+                : "bg-red-600/10 border-red-500 text-red-400"
+            }`}
+          >
             {message}
           </div>
         )}
@@ -422,7 +470,7 @@ export default function MyOrders() {
                     </div>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-6 flex flex-col md:flex-row gap-3">
                     <a
                       href={getGoogleMapsUrl(order)}
                       target="_blank"
@@ -431,6 +479,16 @@ export default function MyOrders() {
                     >
                       Ver Ruta Punto A → Punto B
                     </a>
+
+                    {order.status === "Pendiente" && (
+                      <button
+                        type="button"
+                        onClick={() => openCancelConfirmation(order)}
+                        className="inline-flex items-center justify-center w-full md:w-auto gap-2 bg-yellow-600 hover:bg-yellow-700 transition px-5 py-3 rounded-lg font-bold"
+                      >
+                        Cancelar Pedido
+                      </button>
+                    )}
                   </div>
 
                   <div className="mt-4 overflow-hidden rounded-xl border border-gray-700">
@@ -445,6 +503,47 @@ export default function MyOrders() {
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {confirmCancelOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
+            <div className="w-full max-w-md bg-[#151515] border border-red-600/40 rounded-2xl p-6 shadow-2xl">
+              <h2 className="text-2xl font-bold text-red-500 mb-3">
+                Cancelar pedido
+              </h2>
+
+              <p className="text-gray-300 mb-2">
+                ¿Deseas cancelar este pedido?
+              </p>
+
+              <p className="text-gray-500 text-sm mb-6">
+                Pedido #{confirmCancelOrder.id}. Solo se pueden cancelar
+                pedidos que todavía están en estado Pendiente.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={closeCancelConfirmation}
+                  disabled={Boolean(cancelingId)}
+                  className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-60 transition px-4 py-3 rounded-lg font-bold"
+                >
+                  No
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmCancelOrder}
+                  disabled={Boolean(cancelingId)}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed transition px-4 py-3 rounded-lg font-bold"
+                >
+                  {cancelingId
+                    ? "Cancelando..."
+                    : "Sí, cancelar"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </section>
