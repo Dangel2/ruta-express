@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
+import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 
 import healthRoutes from "./routes/health.routes.js";
@@ -35,12 +36,27 @@ const server = http.createServer(app);
 export const io = new Server(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
 
 io.on("connection", (socket) => {
   console.log("Cliente conectado:", socket.id);
+
+  const token = socket.handshake.auth?.token;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      if (decoded?.id) {
+        socket.join(`customer-${decoded.id}`);
+        console.log(`Cliente unido a sala customer-${decoded.id}`);
+      }
+    } catch (error) {
+      console.log("Socket conectado sin token válido de cliente");
+    }
+  }
 
   socket.on("disconnect", () => {
     console.log("Cliente desconectado:", socket.id);

@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import { cancelOrder, getMyOrders } from "../services/api";
+
+const socket = io("http://localhost:5000", {
+  autoConnect: false
+});
 
 export default function MyOrders() {
   const [orders, setOrders] = useState([]);
@@ -68,11 +73,50 @@ export default function MyOrders() {
   useEffect(() => {
     loadOrders(true);
 
-    const interval = setInterval(() => {
-      loadOrders(false);
-    }, 8000);
+    socket.auth = {
+      token: localStorage.getItem("token")
+    };
 
-    return () => clearInterval(interval);
+    socket.connect();
+
+    socket.on("order-status-updated", (data) => {
+  const updatedOrder = data.order;
+
+  setOrders((previousOrders) => {
+    const updatedOrders = previousOrders.map((order) =>
+      order.id === updatedOrder.id
+        ? { ...order, ...updatedOrder }
+        : order
+    );
+
+    previousOrdersRef.current = updatedOrders;
+
+    return updatedOrders;
+  });
+
+  const notification = getStatusNotification(updatedOrder.status);
+
+  setStatusAlert({
+    id: updatedOrder.id,
+    status: updatedOrder.status,
+    title: notification.title,
+    message: notification.message
+  });
+
+  setTimeout(() => {
+    setStatusAlert(null);
+  }, 7000);
+
+  const audio = new Audio("/notification.mp3");
+  audio.play().catch(() => {
+    console.log("El navegador bloqueó el sonido del cliente.");
+  });
+});
+
+    return () => {
+      socket.off("order-status-updated");
+      socket.disconnect();
+    };
   }, []);
 
   function getStatusClass(status) {
@@ -360,7 +404,7 @@ export default function MyOrders() {
           </p>
 
           <p className="text-gray-500 text-sm mt-2">
-            Esta página se actualiza automáticamente cada pocos segundos.
+            Esta página se actualiza en tiempo real.
           </p>
         </div>
 

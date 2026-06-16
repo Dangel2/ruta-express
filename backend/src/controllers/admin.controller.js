@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
+import { io } from "../server.js";
 
 export async function loginAdmin(req, res) {
   try {
@@ -114,6 +115,13 @@ export async function updateAdminOrderStatus(req, res) {
         message: "Pedido no encontrado"
       });
     }
+
+    io.to(`customer-${result.rows[0].customer_id}`).emit(
+      "order-status-updated",
+      {
+        order: result.rows[0]
+      }
+    );
 
     return res.json({
       message: "Estado actualizado correctamente",
