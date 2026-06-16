@@ -309,6 +309,52 @@ async function handleMarkNotificationsRead() {
     loadData();
   }
 
+
+  const statusOrder = ["Pendiente", "Recibido", "En camino", "Entregado"];
+
+  function getAdminStatusClass(status) {
+    if (status === "Recibido") {
+      return "text-orange-400";
+    }
+
+    if (status === "En camino") {
+      return "text-blue-400";
+    }
+
+    if (status === "Entregado") {
+      return "text-green-400";
+    }
+
+    if (status === "Cancelado") {
+      return "text-red-400";
+    }
+
+    return "text-orange-400";
+  }
+
+  function canMoveToStatus(currentStatus, nextStatus) {
+    if (nextStatus === "Cancelado") {
+      return currentStatus !== "Entregado" && currentStatus !== "Cancelado";
+    }
+
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    const nextIndex = statusOrder.indexOf(nextStatus);
+
+    if (currentIndex === -1 || nextIndex === -1) {
+      return true;
+    }
+
+    return nextIndex >= currentIndex;
+  }
+
+  function getStatusButtonClass(currentStatus, nextStatus, enabledClass) {
+    if (!canMoveToStatus(currentStatus, nextStatus)) {
+      return "bg-gray-700 text-gray-400 cursor-not-allowed px-3 py-2 rounded";
+    }
+
+    return `${enabledClass} px-3 py-2 rounded`;
+  }
+
   const filteredOrders = orders.filter((order) => {
     const text = search.toLowerCase();
     const todayKey = getTodayKey();
@@ -497,9 +543,9 @@ async function handleMarkNotificationsRead() {
             </h2>
           </div>
 
-          <div className="bg-[#151515] border border-yellow-500 rounded-xl p-4">
-            <p className="text-gray-400">Pendientes de Hoy</p>
-            <h2 className="text-3xl font-bold text-yellow-400">
+          <div className="bg-[#151515] border border-orange-500 rounded-xl p-4">
+            <p className="text-gray-400">Recibidos de Hoy</p>
+            <h2 className="text-3xl font-bold text-orange-400">
               {stats.todayPendingOrders ?? stats.pendingOrders ?? 0}
             </h2>
           </div>
@@ -869,7 +915,7 @@ async function handleMarkNotificationsRead() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option>Todos</option>
-              <option>Pendiente</option>
+              <option>Recibido</option>
               <option>En camino</option>
               <option>Entregado</option>
               <option>Cancelado</option>
@@ -967,7 +1013,7 @@ async function handleMarkNotificationsRead() {
 
                 <p className="text-gray-300">
                   Estado actual:{" "}
-                  <span className="font-bold text-red-500">
+                  <span className={`font-bold ${getAdminStatusClass(order.status)}`}>
                     {order.status}
                   </span>
                 </p>
@@ -992,29 +1038,61 @@ async function handleMarkNotificationsRead() {
                   </a>
 
                   <button
-                    onClick={() => changeStatus(order.id, "Pendiente")}
-                    className="bg-yellow-600 px-3 py-2 rounded"
+                    onClick={() =>
+                      canMoveToStatus(order.status, "Recibido") &&
+                      changeStatus(order.id, "Recibido")
+                    }
+                    disabled={!canMoveToStatus(order.status, "Recibido")}
+                    className={getStatusButtonClass(
+                      order.status,
+                      "Recibido",
+                      "bg-orange-600 hover:bg-orange-700"
+                    )}
                   >
-                    Pendiente
+                    Recibido
                   </button>
 
                   <button
-                    onClick={() => changeStatus(order.id, "En camino")}
-                    className="bg-blue-600 px-3 py-2 rounded"
+                    onClick={() =>
+                      canMoveToStatus(order.status, "En camino") &&
+                      changeStatus(order.id, "En camino")
+                    }
+                    disabled={!canMoveToStatus(order.status, "En camino")}
+                    className={getStatusButtonClass(
+                      order.status,
+                      "En camino",
+                      "bg-blue-600 hover:bg-blue-700"
+                    )}
                   >
                     En camino
                   </button>
 
                   <button
-                    onClick={() => changeStatus(order.id, "Entregado")}
-                    className="bg-green-600 px-3 py-2 rounded"
+                    onClick={() =>
+                      canMoveToStatus(order.status, "Entregado") &&
+                      changeStatus(order.id, "Entregado")
+                    }
+                    disabled={!canMoveToStatus(order.status, "Entregado")}
+                    className={getStatusButtonClass(
+                      order.status,
+                      "Entregado",
+                      "bg-green-600 hover:bg-green-700"
+                    )}
                   >
                     Entregado
                   </button>
 
                   <button
-                    onClick={() => changeStatus(order.id, "Cancelado")}
-                    className="bg-red-600 px-3 py-2 rounded"
+                    onClick={() =>
+                      canMoveToStatus(order.status, "Cancelado") &&
+                      changeStatus(order.id, "Cancelado")
+                    }
+                    disabled={!canMoveToStatus(order.status, "Cancelado")}
+                    className={getStatusButtonClass(
+                      order.status,
+                      "Cancelado",
+                      "bg-red-600 hover:bg-red-700"
+                    )}
                   >
                     Cancelado
                   </button>

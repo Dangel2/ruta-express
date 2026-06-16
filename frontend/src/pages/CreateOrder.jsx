@@ -298,6 +298,16 @@ export default function CreateOrder() {
       return false;
     }
 
+    if (!form.description.trim()) {
+      setMessage("La descripción del mandado es obligatoria.");
+      return false;
+    }
+
+    if (form.description.trim().length < 5) {
+      setMessage("La descripción debe tener al menos 5 caracteres.");
+      return false;
+    }
+
     if (isDistanceService && Number(form.price_per_km) <= 0) {
       setMessage(
         "Este servicio no tiene configurado correctamente el precio por kilómetro."
@@ -645,6 +655,8 @@ export default function CreateOrder() {
                 placeholder="Describe qué necesitas: compra, retiro, entrega, pago o trámite"
                 value={form.description}
                 onChange={handleChange}
+                required
+                minLength={5}
               />
             </div>
 

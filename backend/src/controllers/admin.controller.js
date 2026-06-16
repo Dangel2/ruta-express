@@ -91,6 +91,7 @@ export async function updateAdminOrderStatus(req, res) {
 
     const validStatuses = [
       "Pendiente",
+      "Recibido",
       "En camino",
       "Entregado",
       "Cancelado"
@@ -102,6 +103,39 @@ export async function updateAdminOrderStatus(req, res) {
       });
     }
 
+    const currentOrderResult = await pool.query(
+      `SELECT *
+       FROM orders
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (currentOrderResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Pedido no encontrado"
+      });
+    }
+
+    const currentOrder = currentOrderResult.rows[0];
+    const statusOrder = ["Pendiente", "Recibido", "En camino", "Entregado"];
+
+    if (status !== "Cancelado") {
+      const currentIndex = statusOrder.indexOf(currentOrder.status);
+      const nextIndex = statusOrder.indexOf(status);
+
+      if (currentIndex !== -1 && nextIndex < currentIndex) {
+        return res.status(400).json({
+          message: "No se puede regresar a un estado anterior"
+        });
+      }
+    }
+
+    if (currentOrder.status === "Entregado" && status !== "Entregado") {
+      return res.status(400).json({
+        message: "Un pedido entregado no puede cambiar de estado"
+      });
+    }
+
     const result = await pool.query(
       `UPDATE orders
        SET status = $1
@@ -109,12 +143,6 @@ export async function updateAdminOrderStatus(req, res) {
        RETURNING *`,
       [status, id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "Pedido no encontrado"
-      });
-    }
 
     io.to(`customer-${result.rows[0].customer_id}`).emit(
       "order-status-updated",
@@ -198,7 +226,7 @@ export async function getDashboardStats(req, res) {
         ) AS today_orders,
 
         COUNT(*) FILTER (
-          WHERE TRIM(status) = 'Pendiente'
+          WHERE TRIM(status) = 'Recibido'
           AND DATE(created_at) =
           DATE(NOW() AT TIME ZONE 'America/Managua')
         ) AS today_pending_orders,

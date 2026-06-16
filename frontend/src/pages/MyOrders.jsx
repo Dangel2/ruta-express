@@ -132,14 +132,19 @@ export default function MyOrders() {
       return "bg-red-600/10 text-red-400 border-red-500";
     }
 
+    if (status === "Recibido") {
+      return "bg-orange-600/10 text-orange-400 border-orange-500";
+    }
+
     return "bg-yellow-600/10 text-yellow-400 border-yellow-500";
   }
 
   function getStatusNotification(status) {
     switch (status) {
       case "Pendiente":
+      case "Recibido":
         return {
-          title: "📦 Pedido pendiente",
+          title: "📦 Pedido recibido",
           message:
             "Tu pedido fue recibido correctamente y está esperando ser atendido."
         };
@@ -173,13 +178,16 @@ export default function MyOrders() {
   }
 
   function getStepState(orderStatus, step) {
-    const steps = ["Pendiente", "En camino", "Entregado"];
+    const steps = ["Recibido", "En camino", "Entregado"];
 
     if (orderStatus === "Cancelado") {
       return "cancelado";
     }
 
-    const currentIndex = steps.indexOf(orderStatus);
+    const normalizedStatus =
+      orderStatus === "Pendiente" ? "Recibido" : orderStatus;
+
+    const currentIndex = steps.indexOf(normalizedStatus);
     const stepIndex = steps.indexOf(step);
 
     if (currentIndex === -1) {
@@ -429,7 +437,7 @@ export default function MyOrders() {
         ) : (
           <div className="grid gap-5">
             {orders.map((order) => {
-              const pendienteState = getStepState(order.status, "Pendiente");
+              const recibidoState = getStepState(order.status, "Recibido");
               const caminoState = getStepState(order.status, "En camino");
               const entregadoState = getStepState(order.status, "Entregado");
 
@@ -472,14 +480,14 @@ export default function MyOrders() {
                       <div className="flex flex-col items-center">
                         <div
                           className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold ${getCircleClass(
-                            pendienteState
+                            recibidoState
                           )}`}
                         >
                           1
                         </div>
 
                         <p className="text-xs mt-2 text-gray-400 text-center">
-                          Pendiente
+                          Recibido
                         </p>
                       </div>
 
@@ -609,7 +617,7 @@ export default function MyOrders() {
                       Ver Ruta Punto A → Punto B
                     </a>
 
-                    {order.status === "Pendiente" && (
+                    {["Pendiente", "Recibido"].includes(order.status) && (
                       <button
                         type="button"
                         onClick={() => openCancelConfirmation(order)}
@@ -648,7 +656,7 @@ export default function MyOrders() {
 
               <p className="text-gray-500 text-sm mb-6">
                 Pedido #{confirmCancelOrder.id}. Solo se pueden cancelar pedidos
-                que todavía están en estado Pendiente.
+                que todavía no van en camino.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
