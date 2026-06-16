@@ -1,5 +1,6 @@
 import { pool } from "../config/db.js";
 import { sendNewOrderWhatsApp } from "../services/whatsappService.js";
+import { io } from "../server.js";
 
 export async function createOrder(req, res) {
   try {
@@ -87,7 +88,11 @@ await pool.query(
   [result.rows[0].id]
 );
 
-    sendNewOrderWhatsApp(result.rows[0]);
+io.emit("new-order", {
+  order: result.rows[0]
+});
+
+sendNewOrderWhatsApp(result.rows[0]);
 
     return res.status(201).json({
       message: "Pedido creado correctamente",

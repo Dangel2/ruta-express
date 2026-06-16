@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import {
   getDashboardStats,
   getAllOrders,
@@ -18,6 +19,8 @@ import {
   getUnreadNotificationsCount,
   markNotificationsViewed
 } from "../services/api";
+
+const socket = io("http://localhost:5000");
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -132,51 +135,31 @@ export default function AdminDashboard() {
   useEffect(() => {
   loadData();
 
-  const interval = setInterval(async () => {
-    try {
-      const ordersData = await getAllOrders();
-      const latestOrders = ordersData.orders || [];
+  socket.on("new-order", async (data) => {
+    const order = data.order;
 
-      if (latestOrders.length > 0) {
-        const newestOrder = latestOrders[0];
+    setNewOrderAlert(`🚚 Nuevo pedido #${order.id} de ${order.customer_name || "Cliente"}`);
+    setToastOrder(order);
 
-        if (
-          lastOrderId !== null &&
-          newestOrder.id !== lastOrderId
-        ) {
-          setNewOrderAlert(
-            `🔔 Nuevo pedido #${newestOrder.id} de ${
-              newestOrder.customer_name || "Cliente"
-            }`
-          );
+    const audio = new Audio("/notification.mp3");
+    audio.play().catch(() => {});
 
-          setToastOrder(newestOrder);
-         
+    const notificationsData = await getUnreadNotificationsCount();
+    setNewOrdersCount(notificationsData.count || 0);
 
-          const audio = new Audio("/notification.mp3");
-          audio.play().catch(() => {
-            console.log(
-              "El navegador bloqueó el sonido hasta que el usuario interactúe."
-            );
-          });
+    const ordersData = await getAllOrders();
+    setOrders(ordersData.orders || []);
 
-          setTimeout(() => {
-            setNewOrderAlert(null);
-            setToastOrder(null);
-          }, 10000);
-        }
+    setTimeout(() => {
+      setNewOrderAlert(null);
+      setToastOrder(null);
+    }, 10000);
+  });
 
-        setLastOrderId(newestOrder.id);
-      }
-
-      setOrders(latestOrders);
-    } catch (error) {
-      console.error(error);
-    }
-  }, 5000);
-
-  return () => clearInterval(interval);
-}, [lastOrderId]);
+  return () => {
+    socket.off("new-order");
+  };
+}, []);
 
 async function handleMarkNotificationsRead() {
   await markNotificationsViewed();
@@ -996,7 +979,7 @@ async function handleMarkNotificationsRead() {
                     rel="noopener noreferrer"
                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
                   >
-                    Ver Ruta Punto A �?Punto B
+                    Ver Ruta Punto A ?Punto B
                   </a>
 
                   <a
@@ -1005,7 +988,7 @@ async function handleMarkNotificationsRead() {
                     rel="noopener noreferrer"
                     className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-bold"
                   >
-                    Ruta completa: Mi ubicación �?Punto A �?Punto B
+                    Ruta completa: Mi ubicación ?Punto A ?Punto B
                   </a>
 
                   <button
