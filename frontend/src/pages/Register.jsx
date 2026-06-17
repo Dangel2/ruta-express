@@ -25,10 +25,12 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const cleanEmail = form.email.trim().toLowerCase();
+
     if (
       !form.name.trim() ||
       !form.phone.trim() ||
-      !form.email.trim() ||
+      !cleanEmail ||
       !form.password.trim()
     ) {
       setMessage("❌ Completa todos los campos.");
@@ -39,11 +41,18 @@ export default function Register() {
       setLoading(true);
       setMessage("");
 
-      const result = await registerUser(form);
+      const result = await registerUser({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: cleanEmail,
+        password: form.password
+      });
 
       if (result.customer) {
+        localStorage.setItem("pendingVerificationEmail", cleanEmail);
+
         setMessage(
-          "✅ Cuenta creada correctamente. Redirigiendo a iniciar sesión..."
+          "✅ Cuenta creada correctamente. Revisa tu correo para verificarla..."
         );
 
         setForm({
@@ -54,7 +63,12 @@ export default function Register() {
         });
 
         setTimeout(() => {
-          navigate("/login");
+          navigate("/verify-email", {
+            state: {
+              email: cleanEmail
+            },
+            replace: true
+          });
         }, 1000);
       } else {
         setMessage(
@@ -92,7 +106,11 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          autoComplete="off"
+        >
           <input
             className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
             type="text"
@@ -100,6 +118,7 @@ export default function Register() {
             placeholder="Nombre completo"
             value={form.name}
             onChange={handleChange}
+            autoComplete="off"
             required
           />
 
@@ -110,6 +129,7 @@ export default function Register() {
             placeholder="Teléfono"
             value={form.phone}
             onChange={handleChange}
+            autoComplete="off"
             required
           />
 
@@ -120,6 +140,7 @@ export default function Register() {
             placeholder="Correo electrónico"
             value={form.email}
             onChange={handleChange}
+            autoComplete="off"
             required
           />
 
@@ -130,6 +151,7 @@ export default function Register() {
             placeholder="Contraseña"
             value={form.password}
             onChange={handleChange}
+            autoComplete="new-password"
             required
             minLength={6}
           />

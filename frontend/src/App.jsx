@@ -11,6 +11,7 @@ import CreateOrder from "./pages/CreateOrder";
 import MyOrders from "./pages/MyOrders";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function App() {
   return (
@@ -21,6 +22,8 @@ function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/register" element={<Register />} />
+		
+		<Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route path="/login" element={<Login />} />
 

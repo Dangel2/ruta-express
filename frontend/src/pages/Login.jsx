@@ -1,20 +1,25 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    location.state?.email ? "✅ Correo verificado. Ahora puedes iniciar sesión." : ""
+  );
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password.trim()) {
       setMessage("Ingresa tu correo y contraseña.");
       return;
     }
@@ -24,19 +29,33 @@ export default function Login() {
       setMessage("");
 
       const result = await loginUser({
-        email,
+        email: cleanEmail,
         password
       });
 
       if (result.token) {
         localStorage.setItem("token", result.token);
         localStorage.setItem("customer", JSON.stringify(result.customer));
+        localStorage.removeItem("pendingVerificationEmail");
 
         setMessage("✅ Inicio de sesión correcto. Redirigiendo...");
 
         setTimeout(() => {
-          navigate("/");
+          navigate("/", { replace: true });
         }, 700);
+      } else if (result.needsVerification) {
+        localStorage.setItem("pendingVerificationEmail", result.email || cleanEmail);
+
+        setMessage("Debes verificar tu correo antes de iniciar sesión. Redirigiendo...");
+
+        setTimeout(() => {
+          navigate("/verify-email", {
+            state: {
+              email: result.email || cleanEmail
+            },
+            replace: true
+          });
+        }, 900);
       } else {
         setMessage(result.message || "No se pudo iniciar sesión.");
       }
@@ -49,7 +68,7 @@ export default function Login() {
   };
 
   function getMessageClass() {
-    if (message.includes("✅") || message.toLowerCase().includes("correcto")) {
+    if (message.includes("✅") || message.toLowerCase().includes("correcto") || message.toLowerCase().includes("verificado")) {
       return "bg-green-600/10 border-green-500 text-green-400";
     }
 
@@ -75,13 +94,14 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <input
             className="w-full bg-black border border-gray-700 rounded-lg p-3 outline-none focus:border-red-600"
             type="email"
             placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="off"
             required
           />
 
@@ -91,6 +111,7 @@ export default function Login() {
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
 
