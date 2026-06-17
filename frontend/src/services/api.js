@@ -190,6 +190,21 @@ export async function updateMyProfile(profileData) {
   return response.json();
 }
 
+export async function changeMyPassword(passwordData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/customers/me/password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(passwordData)
+  });
+
+  return response.json();
+}
+
 /* ===========================
    PROMOTIONS
 =========================== */
